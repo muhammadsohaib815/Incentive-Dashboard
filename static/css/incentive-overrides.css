@@ -153,16 +153,396 @@ body.incentive-page {
         /* Compact top spacing + filter size (visual only, no logic changed). */
         .header {
             margin-bottom: 4px !important;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
         }
 
+        .header-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+
+        .header-controls .filter-toggle-btn {
+            min-height: 42px;
+            padding: 0 16px;
+            border-radius: 10px;
+            color: #0B1F44;
+            font-family: inherit;
+            flex-shrink: 0;
+        }
+
+        .header-controls .filter-toggle-btn.is-open {
+            background: #EFF6FF;
+            border-color: #93c5fd;
+        }
+
+        .header-controls .filter-toggle-btn:focus-visible {
+            outline: 3px solid #93c5fd;
+            outline-offset: 2px;
+        }
+
+        #filter-panel-box[hidden] {
+            display: none !important;
+        }
+
+        /* ========================================================= */
+        /* EXECUTIVE FILTER BAR (Design Template in Navy Blue)       */
+        /* ========================================================= */
         .filters-component {
-            margin-bottom: 4px !important;
-            zoom: 0.79;
-            transform-origin: left center;
+            margin-bottom: 12px !important;
+            zoom: 1 !important;
+            transform: none !important;
+            width: 100% !important;
         }
 
-        .filter-panel-box {
-            margin-top: 4px !important;
+        .filters-bar-form {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-end !important;
+            justify-content: flex-start !important;
+            gap: 10px !important;
+            background: #0B1F44 !important; /* Deep Navy Blue matching corporate brand - strictly NO green */
+            background: linear-gradient(180deg, #0f2756 0%, #0B1F44 100%) !important;
+            border: 1px solid rgba(59, 130, 246, 0.25) !important;
+            border-radius: 8px !important;
+            padding: 10px 14px !important;
+            box-shadow: 0 4px 14px rgba(11, 31, 68, 0.16) !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            flex-wrap: nowrap !important;
+        }
+
+        .filters-bar-form .filter {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            cursor: default !important;
+        }
+
+        .filters-bar-form .filter.employee-filter {
+            flex: 1.5 1 0 !important;
+            min-width: 150px !important;
+        }
+
+        .filters-bar-form .filter > span {
+            color: #ffffff !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.02em !important;
+            white-space: nowrap !important;
+            text-overflow: ellipsis !important;
+            overflow: hidden !important;
+            line-height: 1.2 !important;
+            user-select: none !important;
+        }
+
+        .filters-bar-form .filter-select {
+            width: 100% !important;
+            height: 38px !important;
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border-radius: 6px !important;
+            padding: 0 28px 0 10px !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            cursor: pointer !important;
+            outline: none !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 9px center !important;
+            background-size: 12px !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+            box-sizing: border-box !important;
+        }
+
+        .filters-bar-form .filter-select:hover {
+            border-color: #93c5fd !important;
+        }
+
+        .filters-bar-form .filter-select:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+        }
+
+        .filters-bar-form .filter-select option {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            font-weight: 500 !important;
+            padding: 6px 10px !important;
+        }
+
+        .filters-bar-form .apply-filters-btn {
+            height: 38px !important;
+            padding: 0 20px !important;
+            background: #2563EB !important; /* Vibrant Corporate Blue */
+            color: #ffffff !important;
+            font-size: 13.5px !important;
+            font-weight: 700 !important;
+            border: none !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            align-self: flex-end !important;
+            margin-bottom: 0 !important;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35) !important;
+            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease !important;
+            flex-shrink: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        .filters-bar-form .apply-filters-btn:hover {
+            background: #1D4ED8 !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45) !important;
+        }
+
+        .filters-bar-form .apply-filters-btn:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3) !important;
+        }
+
+        /* ========================================================= */
+        /* CUSTOM SEARCHABLE DROPDOWNS (Matching 2nd Image)          */
+        /* ========================================================= */
+        .filters-bar-form .filter.search-select-wrap {
+            position: relative !important;
+        }
+
+        /* Hidden native select keeps form submission and automated tests working */
+        .filters-bar-form .search-select-wrap .filter-native-select {
+            position: absolute !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            z-index: -1 !important;
+        }
+
+        /* Visible trigger button matching the 1st image */
+        .filters-bar-form .search-select-trigger {
+            width: 100% !important;
+            height: 38px !important;
+            background-color: #ffffff !important;
+            color: #1e293b !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            font-family: inherit !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            border-radius: 6px !important;
+            padding: 0 10px 0 12px !important;
+            cursor: pointer !important;
+            outline: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 6px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+            box-sizing: border-box !important;
+            text-align: left !important;
+        }
+
+        .filters-bar-form .search-select-trigger:hover {
+            border-color: #93c5fd !important;
+        }
+
+        .filters-bar-form .search-select-trigger:focus,
+        .filters-bar-form .search-select-wrap.is-open .search-select-trigger {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+        }
+
+        .filters-bar-form .search-select-trigger .trigger-text {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            flex: 1 1 auto !important;
+        }
+
+        .filters-bar-form .search-select-trigger .trigger-chevron {
+            flex-shrink: 0 !important;
+            color: #334155 !important;
+            transition: transform 0.2s ease !important;
+        }
+
+        .filters-bar-form .search-select-wrap.is-open .trigger-chevron {
+            transform: rotate(180deg) !important;
+        }
+
+        /* The Dropdown Panel Matching 2nd Image */
+        .filters-bar-form .search-select-panel {
+            display: none;
+            position: absolute !important;
+            top: calc(100% + 5px) !important;
+            left: 0 !important;
+            z-index: 1050 !important;
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 12px 28px -4px rgba(11, 31, 68, 0.22), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+            padding: 8px 8px 6px 8px !important;
+            box-sizing: border-box !important;
+            min-width: 100% !important;
+            width: max-content !important;
+            min-width: 220px !important;
+            max-width: 360px !important;
+        }
+
+        .filters-bar-form .search-select-wrap.is-open .search-select-panel {
+            display: block !important;
+            animation: searchPanelFadeIn 0.12s ease-out !important;
+        }
+
+        @keyframes searchPanelFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Dedicated Search Input Box (Matching 2nd Image with blue outline) */
+        .filters-bar-form .search-box-wrap {
+            margin-bottom: 6px !important;
+        }
+
+        .filters-bar-form .search-box-input {
+            width: 100% !important;
+            height: 34px !important;
+            background: #ffffff !important;
+            border: 1.5px solid #2563EB !important; /* Preserves blue theme instead of green */
+            border-radius: 6px !important;
+            padding: 0 10px !important;
+            font-size: 13px !important;
+            font-family: inherit !important;
+            color: #0f172a !important;
+            outline: none !important;
+            box-sizing: border-box !important;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+        }
+
+        .filters-bar-form .search-box-input:focus {
+            border-color: #1D4ED8 !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2) !important;
+        }
+
+        .filters-bar-form .search-box-input::placeholder {
+            color: #94a3b8 !important;
+            font-size: 12.5px !important;
+        }
+
+        /* Dropdown Title / Header (e.g. "Dept Terr Code", "Employee" as in 2nd image) */
+        .filters-bar-form .search-panel-title {
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #0B1F44 !important;
+            padding: 4px 6px 6px 6px !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            margin-bottom: 4px !important;
+            user-select: none !important;
+        }
+
+        /* Scrollable Options List */
+        .filters-bar-form .search-panel-options {
+            max-height: 220px !important;
+            overflow-y: auto !important;
+            padding: 2px 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1px !important;
+        }
+
+        /* Custom Scrollbar matching 2nd image */
+        .filters-bar-form .search-panel-options::-webkit-scrollbar {
+            width: 6px !important;
+        }
+        .filters-bar-form .search-panel-options::-webkit-scrollbar-track {
+            background: #f1f5f9 !important;
+            border-radius: 4px !important;
+        }
+        .filters-bar-form .search-panel-options::-webkit-scrollbar-thumb {
+            background: #94a3b8 !important;
+            border-radius: 4px !important;
+        }
+        .filters-bar-form .search-panel-options::-webkit-scrollbar-thumb:hover {
+            background: #64748b !important;
+        }
+
+        /* Individual Option Items */
+        .filters-bar-form .search-option-row {
+            padding: 7px 10px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            color: #1e293b !important;
+            border-radius: 4px !important;
+            cursor: pointer !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            user-select: none !important;
+            transition: background 0.1s ease, color 0.1s ease !important;
+        }
+
+        .filters-bar-form .search-option-row:hover {
+            background: #f1f5f9 !important;
+            color: #0B1F44 !important;
+        }
+
+        .filters-bar-form .search-option-row.is-selected {
+            background: #EFF6FF !important;
+            color: #2563EB !important;
+            font-weight: 700 !important;
+        }
+
+        .filters-bar-form .search-panel-empty {
+            padding: 10px 8px !important;
+            font-size: 12.5px !important;
+            color: #64748b !important;
+            text-align: center !important;
+            font-style: italic !important;
+        }
+
+        @media (max-width: 1100px) {
+            .filters-bar-form {
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+            }
+            .filters-bar-form .filter {
+                flex: 1 1 calc(25% - 8px) !important;
+                min-width: 110px !important;
+            }
+            .filters-bar-form .filter.employee-filter {
+                flex: 2 1 calc(50% - 8px) !important;
+            }
+            .filters-bar-form .apply-filters-btn {
+                flex: 1 1 auto !important;
+            }
         }
 
         .profile-card-container {

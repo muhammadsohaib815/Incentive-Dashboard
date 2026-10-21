@@ -4,58 +4,58 @@ A modular, production-ready Python Flask application for calculating sales incen
 
 ---
 
-## 📁 Project Architecture & File Organization
+## ðŸ“ Project Architecture & File Organization
 
 The project has been refactored into a clean, layered architecture separating core computation logic, dataset loading, and the Flask web layer:
 
 ```
 incentive_website/
-│
-├── core/                           # 🧠 Core Business Logic & Calculations
-│   ├── __init__.py                 # Exports calculation engine & data loaders
-│   ├── config.py                   # Central configuration: product groups, criteria thresholds, slabs
-│   ├── db_loader.py                # PostgreSQL provider for staff, targets, and sales
-│   ├── employee_service.py         # Employee lookup, team/designation resolution, ASM/RSM territory rollups
-│   ├── engine.py                   # Master calculation engine orchestrating all evaluators and bonuses
-│   │
-│   ├── evaluators/                 # 🎯 Role & Team Evaluation Logic
-│   │   ├── __init__.py             # Module exports
-│   │   ├── base.py                 # Base helper for criteria calculations
-│   │   ├── do_evaluator.py         # DO Team SPO & ASM evaluations
-│   │   ├── touch_evaluator.py      # TOUCH Team SPO & ASM evaluations
-│   │   ├── overlapping_evaluator.py# Overlapping SPO & ASM evaluations
-│   │   ├── bliss_evaluator.py      # BLISS Team SPO & ASM evaluations
-│   │   └── rsm_evaluator.py        # Regional Sales Manager (RSM) 7-criteria evaluations
-│   │
-│   └── bonuses/                    # 🎁 Bonus & Add-on Calculators
-│       ├── __init__.py             # Module exports
-│       ├── ucc.py                  # Universal Coverage Criteria (UCC) calculation
-│       └── privilege_club.py       # SPO, ASM, and RSM Privilege Club qualification
-│
-├── templates/                      # 🎨 UI Templates
-│   └── index.html                  # Responsive modern dashboard interface
-│
-├── static/                         # 💅 Static Assets
-│   ├── style.css                   # Custom styling & glassmorphic UI components
-│   └── header_metrics_icon.png     # Dashboard UI assets
-│
-├── docs/                           # 📄 Documentation & Reference Policies
-│   ├── Trade Scheme Jan 2026.pdf
-│   ├── Bliss Scheme Jan 2026.pdf
-│   ├── FMCG Policy Jan 2026.pdf
-│   └── ...
-│
-├── tests/                          # 🧪 Test Suite
-│   └── test_engine.py              # Automated tests verifying calculations against ground truth
-│
-├── server.py                       # 🚀 Single Application Entry Point & Web Backend (runs Flask server)
-├── requirements.txt                # 📦 Python Dependencies
-└── README.md                       # 📖 Project Documentation
+â”‚
+â”œâ”€â”€ core/                           # ðŸ§  Core Business Logic & Calculations
+â”‚   â”œâ”€â”€ __init__.py                 # Exports calculation engine & data loaders
+â”‚   â”œâ”€â”€ config.py                   # Central configuration: product groups, criteria thresholds, slabs
+â”‚   â”œâ”€â”€ db_loader.py                # PostgreSQL provider for staff, targets, and sales
+â”‚   â”œâ”€â”€ employee_service.py         # Employee lookup, team/designation resolution, ASM/RSM territory rollups
+â”‚   â”œâ”€â”€ engine.py                   # Master calculation engine orchestrating all evaluators and bonuses
+â”‚   â”‚
+â”‚   â”œâ”€â”€ evaluators/                 # ðŸŽ¯ Role & Team Evaluation Logic
+â”‚   â”‚   â”œâ”€â”€ __init__.py             # Module exports
+â”‚   â”‚   â”œâ”€â”€ base.py                 # Base helper for criteria calculations
+â”‚   â”‚   â”œâ”€â”€ do_evaluator.py         # DO Team SPO & ASM evaluations
+â”‚   â”‚   â”œâ”€â”€ touch_evaluator.py      # TOUCH Team SPO & ASM evaluations
+â”‚   â”‚   â”œâ”€â”€ overlapping_evaluator.py# Overlapping SPO & ASM evaluations
+â”‚   â”‚   â”œâ”€â”€ bliss_evaluator.py      # BLISS Team SPO & ASM evaluations
+â”‚   â”‚   â””â”€â”€ rsm_evaluator.py        # Regional Sales Manager (RSM) 7-criteria evaluations
+â”‚   â”‚
+â”‚   â””â”€â”€ bonuses/                    # ðŸŽ Bonus & Add-on Calculators
+â”‚       â”œâ”€â”€ __init__.py             # Module exports
+â”‚       â”œâ”€â”€ ucc.py                  # Universal Coverage Criteria (UCC) calculation
+â”‚       â””â”€â”€ privilege_club.py       # SPO, ASM, and RSM Privilege Club qualification
+â”‚
+â”œâ”€â”€ templates/                      # ðŸŽ¨ UI Templates
+â”‚   â””â”€â”€ index.html                  # Responsive modern dashboard interface
+â”‚
+â”œâ”€â”€ static/                         # ðŸ’… Static Assets
+â”‚   â”œâ”€â”€ style.css                   # Custom styling & glassmorphic UI components
+â”‚   â””â”€â”€ header_metrics_icon.png     # Dashboard UI assets
+â”‚
+â”œâ”€â”€ docs/                           # ðŸ“„ Documentation & Reference Policies
+â”‚   â”œâ”€â”€ Trade Scheme Jan 2026.pdf
+â”‚   â”œâ”€â”€ Bliss Scheme Jan 2026.pdf
+â”‚   â”œâ”€â”€ FMCG Policy Jan 2026.pdf
+â”‚   â””â”€â”€ ...
+â”‚
+â”œâ”€â”€ tests/                          # ðŸ§ª Test Suite
+â”‚   â””â”€â”€ test_engine.py              # Automated tests verifying calculations against ground truth
+â”‚
+â”œâ”€â”€ server.py                       # ðŸš€ Single Application Entry Point & Web Backend (runs Flask server)
+â”œâ”€â”€ requirements.txt                # ðŸ“¦ Python Dependencies
+â””â”€â”€ README.md                       # ðŸ“– Project Documentation
 ```
 
 ---
 
-## 🚀 Getting Started
+## ðŸš€ Getting Started
 
 ### 1. Prerequisites & Installation
 
@@ -80,7 +80,7 @@ http://127.0.0.1:5000
 
 ---
 
-## 🧪 Running Automated Tests
+## ðŸ§ª Running Automated Tests
 
 Run the test suite to verify calculation accuracy across SPOs, ASMs, and RSMs:
 
@@ -90,7 +90,7 @@ python tests/test_engine.py
 
 ---
 
-## 🔍 Key Evaluator Details
+## ðŸ” Key Evaluator Details
 
 1. **SPO Teams (`do_evaluator.py`, `touch_evaluator.py`, `overlapping_evaluator.py`, `bliss_evaluator.py`)**:
    - Calculates target vs. achievement across product categories, brands, and bottom-line figures.

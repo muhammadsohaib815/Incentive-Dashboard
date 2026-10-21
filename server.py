@@ -56,13 +56,18 @@ def create_app():
         target_df, sales_df, target_master_col = load_datasets()
         staff_df = load_staff_df()
 
-        # Build employee list and team mapping (excluding unmapped and vacant positions)
+        # Build employee list, metadata and team mapping (excluding unmapped and vacant positions)
         emp_list = []
         emp_team_map = {}
+        emp_meta = {}
         if not staff_df.empty:
             for _, r in staff_df.iterrows():
                 name = str(r.get('Employe_Name', '')).strip()
                 terr = str(r.get('Dept. Territory Code', '')).strip() if pd.notna(r.get('Dept. Territory Code')) and str(r.get('Dept. Territory Code')).strip() not in ('nan', '') else ''
+                desg = str(r.get('Designation_Name', '')).strip()
+                reg = str(r.get('Region_Name', '')).strip()
+                zone = str(r.get('Zone_Name', '')).strip()
+                subzone = str(r.get('Sub_Zone', '')).strip()
                 t_name = str(r.get('Team_Name', '')).strip().upper()
                 p_code = str(r.get('Position_Code', '')).strip().upper()
                 if is_unmapped_or_vacant(name, p_code, terr):
@@ -75,6 +80,16 @@ def create_app():
                     emp_team_map[label] = 'FMCG'
                 else:
                     emp_team_map[label] = 'OTHER'
+                emp_meta[label] = {
+                    "name": name,
+                    "designation": desg,
+                    "territory": terr,
+                    "region": reg,
+                    "zone": zone,
+                    "sub_zone": subzone,
+                    "position_code": p_code,
+                    "team": emp_team_map[label]
+                }
 
         # Merge any active sales employee combos if not already present
         if not sales_df.empty and "POSITION_CODE" in sales_df.columns and "NAME" in sales_df.columns:
@@ -98,9 +113,30 @@ def create_app():
                         emp_team_map[label] = 'PHARMA'
                     else:
                         emp_team_map[label] = 'FMCG'
+                if label not in emp_meta:
+                    emp_meta[label] = {
+                        "name": name,
+                        "designation": "",
+                        "territory": terr,
+                        "region": "",
+                        "zone": "",
+                        "sub_zone": "",
+                        "position_code": p_code,
+                        "team": emp_team_map[label]
+                    }
 
         all_employees = sorted(list(set(emp_list)))
+        designations = sorted(list({m["designation"] for m in emp_meta.values() if m.get("designation")}))
+        territories = sorted(list({m["territory"] for m in emp_meta.values() if m.get("territory")}))
+        regions = sorted(list({m["region"] for m in emp_meta.values() if m.get("region")}))
+        zones = sorted(list({m["zone"] for m in emp_meta.values() if m.get("zone")}))
+        sub_zones = sorted(list({m["sub_zone"] for m in emp_meta.values() if m.get("sub_zone")}))
 
+        selected_designation = request.form.get("designation") or request.args.get("designation") or ""
+        selected_territory = request.form.get("territory") or request.args.get("territory") or ""
+        selected_region = request.form.get("region") or request.args.get("region") or ""
+        selected_zone = request.form.get("zone") or request.args.get("zone") or ""
+        selected_subzone = request.form.get("subzone") or request.args.get("subzone") or ""
         selected_team = request.form.get("team") or request.args.get("team") or ""
         team_options = [
             {"value": "", "label": "ALL TEAMS"},
@@ -127,6 +163,12 @@ def create_app():
 
         selected_employee = request.form.get("employee") or request.args.get("employee") or ""
         selected_month = request.form.get("month") or request.args.get("month") or "July,26"
+
+        if not selected_employee and selected_territory:
+            for emp_lbl, meta in emp_meta.items():
+                if meta.get("territory") == selected_territory and emp_lbl in employees:
+                    selected_employee = emp_lbl
+                    break
 
         # Do not auto-select an employee. The page intentionally remains empty
         # below the filters until the user chooses a valid employee.
@@ -165,10 +207,29 @@ def create_app():
                 active_category=active_category
             )
 
+        if selected_employee and selected_employee in emp_meta:
+            m = emp_meta[selected_employee]
+            selected_designation = m.get("designation", "") or selected_designation
+            selected_territory = m.get("territory", "") or selected_territory
+            selected_region = m.get("region", "") or selected_region
+            selected_zone = m.get("zone", "") or selected_zone
+            selected_subzone = m.get("sub_zone", "") or selected_subzone
+
         return render_template(
             "index.html",
             employees=employees,
             all_employees=all_employees,
+            emp_meta=emp_meta,
+            designations=designations,
+            territories=territories,
+            regions=regions,
+            zones=zones,
+            sub_zones=sub_zones,
+            selected_designation=selected_designation,
+            selected_territory=selected_territory,
+            selected_region=selected_region,
+            selected_zone=selected_zone,
+            selected_subzone=selected_subzone,
             months=months,
             month_options=month_options,
             team_options=team_options,

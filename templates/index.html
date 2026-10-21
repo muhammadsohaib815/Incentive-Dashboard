@@ -41,166 +41,94 @@
                     <p class="header-subtitle" id="header-subtitle"{% if not cur_sub %} style="display: none;"{% endif %}>{{ cur_sub or '' }}</p>
                 </div>
             </div>
+            <div class="header-controls">
+                <button type="button" id="filter-toggle-btn" class="filter-toggle-btn"
+                    aria-controls="filter-panel-box" aria-expanded="false">Filter</button>
+            </div>
         </header>
 
-        <!-- Collapsible Filters Component (Closed by default) -->
-        <section class="filters-component">
-            <button type="button" class="filter-toggle-btn" id="filter-toggle-btn" aria-expanded="false"
-                aria-controls="filter-panel-box" onclick="toggleFilters()">
-                <svg class="filter-funnel-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                </svg>
-                <span class="filter-btn-text">Filters</span>
-                <span class="filter-badge-pill" id="filter-active-count">{% if selected_employee %}1{% else %}0{% endif
-                    %}</span>
-                <svg class="filter-chevron-icon" width="11" height="11" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </button>
+        <!-- Filter Bar Component (Executive Filter Template with Navy Blue theme) -->
+        <section class="filters-component" id="filter-panel-box" hidden>
+            <form method="POST" action="{{ request.script_root }}/" id="filter-form" class="filters-bar-form">
+                <!-- Designation -->
+                <div class="filter search-select-wrap" data-search-placeholder="Search designation..." data-search-title="Designation">
+                    <span>Designation</span>
+                    <select id="fDesignation" name="designation" class="filter-select">
+                        <option value="">Designation</option>
+                        {% for d in designations %}
+                        <option value="{{ d }}" {% if d == selected_designation %}selected{% endif %}>{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="filter-panel-box" id="filter-panel-box">
-                <form method="POST" action="{{ request.script_root }}/" id="filter-form" class="filter-bar-form">
-                    <span class="filters-tag-label">FILTERS:</span>
+                <!-- Employee -->
+                <div class="filter employee-filter search-select-wrap" data-search-placeholder="Search name..." data-search-title="Employee">
+                    <span>Employee</span>
+                    <select id="employee" name="employee" class="filter-select">
+                        <option value="">Employee</option>
+                        {% for emp in employees %}
+                        <option value="{{ emp }}" {% if emp == selected_employee %}selected{% endif %}>{{ emp }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                    <!-- Team Filter Pill -->
-                    <div class="filter-pill-container">
-                        <div class="search-select filter-pill-select" data-label="team">
-                            <button type="button" class="search-select-trigger pill-trigger" aria-haspopup="listbox"
-                                aria-expanded="false" title="Filter by team">
-                                <svg class="pill-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span class="pill-prefix">TEAM:</span>
-                                <span class="ss-value pill-val {% if not selected_team %}is-empty{% endif %}">{% if selected_team == 'PHARMA' %}PHARMACEUTICAL{% elif selected_team == 'FMCG' %}FMCG{% else %}ALL TEAMS{% endif %}</span>
-                                <svg class="pill-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
-                            </button>
-                            <div class="ss-panel" role="listbox" id="team-listbox">
-                                <div class="ss-search-wrap">
-                                    <svg class="ss-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="7"></circle>
-                                        <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
-                                    </svg>
-                                    <input type="text" class="ss-search-input" placeholder="Search teams..."
-                                        aria-label="Search teams" autocomplete="off">
-                                </div>
-                                <div class="ss-options"></div>
-                                <div class="ss-empty" hidden>No matching teams</div>
-                            </div>
-                            <select id="team" name="team" onchange="onTeamFilterChange(this)"
-                                class="ss-native-select" tabindex="-1" aria-hidden="true">
-                                {% for t in team_options %}
-                                <option value="{{ t.value }}" {% if t.value == selected_team %}selected{% endif %}>{{ t.label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
+                <!-- Dept Terr Code -->
+                <div class="filter search-select-wrap" data-search-placeholder="Search territory..." data-search-title="Dept Terr Code">
+                    <span>Dept Terr Code</span>
+                    <select id="fTerritory" name="territory" class="filter-select">
+                        <option value="">Dept Terr Code</option>
+                        {% for t in territories %}
+                        <option value="{{ t }}" {% if t == selected_territory %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                    <!-- Employee Filter Pill -->
-                    <div class="filter-pill-container">
-                        <div class="search-select filter-pill-select" data-label="employee">
-                            <button type="button" class="search-select-trigger pill-trigger" aria-haspopup="listbox"
-                                aria-expanded="false" title="Filter by employee">
-                                <svg class="pill-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                <span class="pill-prefix">EMPLOYEE:</span>
-                                <span class="ss-value pill-val {% if not selected_employee %}is-empty{% endif %}">{% if
-                                    selected_employee %}{{ selected_employee }}{% else %}ALL{% endif %}</span>
-                                <svg class="pill-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
-                            </button>
-                            <div class="ss-panel" role="listbox" id="employee-listbox">
-                                <div class="ss-search-wrap">
-                                    <svg class="ss-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="7"></circle>
-                                        <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
-                                    </svg>
-                                    <input type="text" class="ss-search-input" placeholder="Search employees..."
-                                        aria-label="Search employees" autocomplete="off">
-                                </div>
-                                <div class="ss-options"></div>
-                                <div class="ss-empty" hidden>No matching employees</div>
-                            </div>
-                            <select id="employee" name="employee" onchange="applyFilterUpdate()"
-                                class="ss-native-select" tabindex="-1" aria-hidden="true">
-                                <option value="">ALL</option>
-                                {% for emp in employees %}
-                                <option value="{{ emp }}" {% if emp==selected_employee %}selected{% endif %}>{{ emp }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
+                <!-- Region -->
+                <div class="filter search-select-wrap" data-search-placeholder="Search region..." data-search-title="Region">
+                    <span>Region</span>
+                    <select id="fRegion" name="region" class="filter-select">
+                        <option value="">Region</option>
+                        {% for r in regions %}
+                        <option value="{{ r }}" {% if r == selected_region %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                    <!-- Reporting Month Filter Pill -->
-                    <div class="filter-pill-container">
-                        <div class="search-select filter-pill-select" data-label="month">
-                            <button type="button" class="search-select-trigger pill-trigger" aria-haspopup="listbox"
-                                aria-expanded="false" title="Filter by reporting month">
-                                <svg class="pill-icon pill-icon-cal" width="13" height="13" viewBox="0 0 24 24"
-                                    fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span class="pill-prefix">DAY / MONTH:</span>
-                                <span class="ss-value pill-val {% if not selected_month %}is-empty{% endif %}">{% if
-                                    selected_month %}{% for m in month_options if m.value == selected_month %}{{ m.label
-                                    }}{% endfor %}{% else %}ALL{% endif %}</span>
-                                <svg class="pill-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
-                            </button>
-                            <div class="ss-panel" role="listbox" id="month-listbox">
-                                <div class="ss-search-wrap">
-                                    <svg class="ss-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="7"></circle>
-                                        <line x1="16.5" y1="16.5" x2="21" y2="21"></line>
-                                    </svg>
-                                    <input type="text" class="ss-search-input" placeholder="Search months..."
-                                        aria-label="Search months" autocomplete="off">
-                                </div>
-                                <div class="ss-options"></div>
-                                <div class="ss-empty" hidden>No matching months</div>
-                            </div>
-                            <select id="month" name="month" onchange="applyFilterUpdate()" class="ss-native-select"
-                                tabindex="-1" aria-hidden="true">
-                                {% for m in month_options %}
-                                <option value="{{ m.value }}" {% if m.value==selected_month %}selected{% endif %}>{{
-                                    m.label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                <!-- Zone -->
+                <div class="filter search-select-wrap" data-search-placeholder="Search zone..." data-search-title="Zone">
+                    <span>Zone</span>
+                    <select id="fZone" name="zone" class="filter-select">
+                        <option value="">Zone</option>
+                        {% for z in zones %}
+                        <option value="{{ z }}" {% if z == selected_zone %}selected{% endif %}>{{ z }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Sub Zone -->
+                <div class="filter search-select-wrap" data-search-placeholder="Search sub zone..." data-search-title="Sub Zone">
+                    <span>Sub Zone</span>
+                    <select id="fSubZone" name="subzone" class="filter-select">
+                        <option value="">Sub Zone</option>
+                        {% for sz in sub_zones %}
+                        <option value="{{ sz }}" {% if sz == selected_subzone %}selected{% endif %}>{{ sz }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <!-- FY -->
+                <label class="filter" for="fFY">
+                    <span>FY</span>
+                    <select id="fFY" name="month" class="filter-select">
+                        {% for m in month_options %}
+                        <option value="{{ m.value }}" {% if m.value == selected_month %}selected{% endif %}>2026-27 ({{ m.label }})</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <!-- Apply Filters Button -->
+                <button type="submit" id="applyFilters" class="apply-filters-btn">Apply Filters</button>
+            </form>
+            <script id="emp-meta-data" type="application/json">{{ (emp_meta or {}) | tojson }}</script>
         </section>
 
         <!-- Dashboard Dynamic Content Area (Updated via AJAX without full page reload) -->

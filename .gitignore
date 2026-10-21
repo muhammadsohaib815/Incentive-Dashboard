@@ -20,3 +20,6 @@ __pycache__/
 
 # Scratch & Dev Artifacts
 scratch/
+
+# Secrets
+.env
