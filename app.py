@@ -3,6 +3,8 @@ Incentive Calculation Platform - Flask Application
 Run the local web dashboard:
     python app.py
 """
+import argparse
+import os
 import sys
 from pathlib import Path
 from flask import Flask, render_template, request
@@ -174,6 +176,73 @@ def create_app():
 
 app = create_app()
 
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run the Sales Incentive Calculation Platform server (Unified Web & API)"
+    )
+    parser.add_argument(
+        "--host",
+        type=str,
+        default=os.environ.get("HOST", "127.0.0.1"),
+        help="Host address to bind the server to (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.environ.get("PORT", 5000)),
+        help="Port to listen on (default: 5000)",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=os.environ.get("DEBUG", "true").lower() in ("true", "1", "t", "yes"),
+        help="Run server in debug mode with auto-reload (default: True)",
+    )
+    parser.add_argument(
+        "--no-debug",
+        action="store_false",
+        dest="debug",
+        help="Disable debug mode",
+    )
+    parser.add_argument(
+        "--prod",
+        action="store_true",
+        help="Run with production WSGI server (Waitress) to eliminate development server warning",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    banner = "=" * 70
+    print(banner)
+    print(" DKT Sales Incentive Calculation & Dashboard System")
+    print(" Unified Web & API Server (app.py)")
+    print(banner)
+    print(f" -> Web Dashboard (Frontend): http://{args.host}:{args.port}/")
+    print(f" -> Incentive Dashboard:      http://{args.host}:{args.port}/incentive/")
+    print(f" -> Health Check:             http://{args.host}:{args.port}/health")
+    if args.prod:
+        print(f" -> Server Engine:            Production WSGI (Waitress)")
+    else:
+        print(f" -> Server Engine:            Flask Development Server")
+        print(f" -> Debug Mode:               {args.debug}")
+    print(banner)
+    print("Press Ctrl+C to stop the server.\n")
+
+    if args.prod:
+        try:
+            from waitress import serve
+            serve(app, host=args.host, port=args.port)
+        except ImportError:
+            print("[WARNING] 'waitress' package is not installed. To use production mode, run:")
+            print("          pip install waitress\n")
+            print("Falling back to standard Flask server...\n")
+            app.run(host=args.host, port=args.port, debug=False)
+    else:
+        app.run(host=args.host, port=args.port, debug=args.debug)
+
+
 if __name__ == "__main__":
-    print("Starting Incentive Platform on http://127.0.0.1:5000")
-    app.run(debug=True, port=5000)
+    main()
