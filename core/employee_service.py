@@ -35,6 +35,30 @@ def format_display_month(month_str):
     return m
 
 
+def is_unmapped_or_vacant(name="", pos_code="", territory=""):
+    """
+    Check if an employee record corresponds to an unmapped, vacant, or placeholder position.
+    Excludes:
+    - Names containing 'UNMAPPED' or 'VACANT' (case-insensitive)
+    - Position codes ending in '-00' or containing 'UNMAP' or 'VACANT'
+    - Territories containing 'UNMAPPED' or 'VACANT'
+    - Blank, NaN, None, or Null names
+    """
+    n = str(name or "").strip().upper()
+    p = str(pos_code or "").strip().upper()
+    t = str(territory or "").strip().upper()
+
+    if not n or n in ("NAN", "NONE", "NULL", ""):
+        return True
+    if "UNMAPPED" in n or "UNMAP" in p or "UNMAPPED" in t:
+        return True
+    if "VACANT" in n or "VACANT" in p or "VACANT" in t:
+        return True
+    if p.endswith("-00") or p.endswith(" 00"):
+        return True
+    return False
+
+
 def get_dynamic_header_details(employee, month, staff_df=None, sales_df=None, pos_code=None, territory=None, team_hint=None, active_category=None):
     """
     Returns (line1, line2, full_title) where:
@@ -196,6 +220,8 @@ def resolve_employee_selection(selected_employee, sales_df, staff_df=None):
         staff_df = load_staff_df()
 
     selected_clean = str(selected_employee).strip()
+    if is_unmapped_or_vacant(selected_clean):
+        return "", "", ""
 
     # 1. Exact match with Position_Code in Master Staff List
     if staff_df is not None and not staff_df.empty and "Position_Code" in staff_df.columns:

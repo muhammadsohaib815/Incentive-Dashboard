@@ -26,6 +26,7 @@ from core.employee_service import (
     resolve_employee_selection,
     build_dynamic_header,
     get_dynamic_header_details,
+    is_unmapped_or_vacant,
 )
 from core.engine import calculate_all_incentives
 
@@ -55,7 +56,7 @@ def create_app():
         target_df, sales_df, target_master_col = load_datasets()
         staff_df = load_staff_df()
 
-        # Build employee list and team mapping
+        # Build employee list and team mapping (excluding unmapped and vacant positions)
         emp_list = []
         emp_team_map = {}
         if not staff_df.empty:
@@ -64,7 +65,7 @@ def create_app():
                 terr = str(r.get('Dept. Territory Code', '')).strip() if pd.notna(r.get('Dept. Territory Code')) and str(r.get('Dept. Territory Code')).strip() not in ('nan', '') else ''
                 t_name = str(r.get('Team_Name', '')).strip().upper()
                 p_code = str(r.get('Position_Code', '')).strip().upper()
-                if not name or name.upper() in ("NAN", "NONE", "NULL"):
+                if is_unmapped_or_vacant(name, p_code, terr):
                     continue
                 label = f"{name} - {terr}" if terr else name
                 emp_list.append(label)
@@ -87,7 +88,7 @@ def create_app():
                 terr = str(r['FF_TERRITORY']).strip() if pd.notna(r.get('FF_TERRITORY')) and str(r.get('FF_TERRITORY')).strip() not in ('nan', '') else ''
                 p_code = str(r.get('POSITION_CODE', '')).strip().upper()
                 t_name = str(r.get('TEAM', '')).strip().upper() if 'TEAM' in r else ''
-                if not name or name.upper() in ("NAN", "NONE", "NULL"):
+                if is_unmapped_or_vacant(name, p_code, terr):
                     continue
                 label = f"{name} - {terr}" if terr else name
                 if label not in emp_list:
@@ -129,8 +130,9 @@ def create_app():
 
         # Do not auto-select an employee. The page intentionally remains empty
         # below the filters until the user chooses a valid employee.
-        if selected_employee and selected_employee not in employees:
-            selected_employee = ""
+        if selected_employee:
+            if is_unmapped_or_vacant(selected_employee) or selected_employee not in employees:
+                selected_employee = ""
 
         result = None
         active_category = "do"

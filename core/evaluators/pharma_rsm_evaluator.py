@@ -6,7 +6,7 @@ Rule: Regional Sales Manager (RSM) receives 10% of the Total Incentive Payout of
 """
 import pandas as pd
 from core.db_loader import get_target_columns
-from core.employee_service import aggregate_asm_datasets
+from core.employee_service import aggregate_asm_datasets, is_unmapped_or_vacant
 from core.evaluators.pharma_evaluator import evaluate_pharma_incentives
 
 # Module-level memory cache for quick re-renders: (zone_name, month) -> result
@@ -77,6 +77,16 @@ def evaluate_pharma_rsm_incentives(
             (staff_df["Designation_Name"].astype(str).str.strip().str.upper().isin(["MIO", "PS", "ASM"]))
         )
         z_staff = staff_df[z_filter].copy()
+        if not z_staff.empty:
+            z_dummy = z_staff.apply(
+                lambda row: is_unmapped_or_vacant(
+                    row.get("Employe_Name"),
+                    row.get("Position_Code"),
+                    row.get("Dept. Territory Code"),
+                ),
+                axis=1,
+            )
+            z_staff = z_staff[~z_dummy].copy()
 
     # 3. Pre-filter month sales and zone subsets for high performance
     s_m = sales_df
