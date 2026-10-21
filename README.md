@@ -48,7 +48,7 @@ incentive_website/
 ├── tests/                          # 🧪 Test Suite
 │   └── test_engine.py              # Automated tests verifying calculations against ground truth
 │
-├── app.py                          # 🚀 Single Application Entry Point & Web Backend (runs Flask server)
+├── server.py                       # 🚀 Single Application Entry Point & Web Backend (runs Flask server)
 ├── requirements.txt                # 📦 Python Dependencies
 └── README.md                       # 📖 Project Documentation
 ```
@@ -70,7 +70,7 @@ pip install -r requirements.txt
 Start the application with:
 
 ```bash
-python app.py
+python server.py
 ```
 
 Open your browser and navigate to:
