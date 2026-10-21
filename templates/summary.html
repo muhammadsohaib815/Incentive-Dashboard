@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ category }} Employee Incentive Summary - {{ month }}</title>
+    <title>{{ 'Combined' if category == 'ALL' else category }} Employee Incentive Summary - {{ month }}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='css/incentive.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/incentive-overrides.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/summary.css') }}">
@@ -20,11 +20,12 @@
                 </div>
                 <div class="header-text">
                     <h1 class="header-title">Employee Incentive Summary</h1>
-                    <p class="header-subtitle">{{ category }} · {{ month_options | selectattr('value', 'equalto', month) | map(attribute='label') | first }}</p>
+                    <p class="header-subtitle">{{ 'FMCG & Pharma' if category == 'ALL' else category }} · {{ month_options | selectattr('value', 'equalto', month) | map(attribute='label') | first }}</p>
                 </div>
             </div>
             <nav class="summary-nav" aria-label="Summary category">
                 <a href="{{ route_url('index', month=month) }}" class="summary-nav-btn">Dashboard</a>
+                <a href="{{ route_url('summary_page', category='ALL', month=month) }}" class="summary-nav-btn{% if category == 'ALL' %} is-active{% endif %}"{% if category == 'ALL' %} aria-current="page"{% endif %}>All</a>
                 <a href="{{ route_url('summary_page', category='PHARMA', month=month) }}" class="summary-nav-btn{% if category == 'PHARMA' %} is-active{% endif %}"{% if category == 'PHARMA' %} aria-current="page"{% endif %}>Pharma</a>
                 <a href="{{ route_url('summary_page', category='FMCG', month=month) }}" class="summary-nav-btn{% if category == 'FMCG' %} is-active{% endif %}"{% if category == 'FMCG' %} aria-current="page"{% endif %}>FMCG</a>
             </nav>
@@ -33,7 +34,7 @@
         <section class="summary-panel" aria-labelledby="summary-heading">
             <div class="summary-topline">
                 <div>
-                    <h2 id="summary-heading">{{ 'Pharma' if category == 'PHARMA' else 'FMCG' }} employees</h2>
+                    <h2 id="summary-heading">{{ 'FMCG & Pharma' if category == 'ALL' else ('Pharma' if category == 'PHARMA' else 'FMCG') }} employees</h2>
                     <p>{{ total }} employee{{ '' if total == 1 else 's' }} · {{ month_options | selectattr('value', 'equalto', month) | map(attribute='label') | first }}</p>
                 </div>
                 <div class="summary-export-actions">
@@ -119,7 +120,7 @@
                             {% endif %}
                         </tr>
                         {% else %}
-                        <tr><td colspan="7" class="summary-empty">No employees match this category and search.</td></tr>
+                        <tr><td colspan="7" class="summary-empty">No employees match the selected category and search.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

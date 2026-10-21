@@ -63,7 +63,7 @@ def get_dynamic_header_details(employee, month, staff_df=None, sales_df=None, po
     """
     Returns (line1, line2, full_title) where:
     - line1: Primary title (e.g., 'ABDUL KHALIL Dashboard - PHARMA')
-    - line2: Subtitle metadata (e.g., 'PHR | GUJ01-PHR-MIO-05 | GUJRANWALA | September 2026')
+    - line2: Subtitle metadata (e.g., 'MIO | PHR | GUJ01-PHR-MIO-05 | GUJRANWALA | Zone: NORTH | Sub Zone: NORTH-A | September 2026')
     - full_title: Combined string for page title
     """
     month_display = format_display_month(month)
@@ -159,6 +159,7 @@ def get_dynamic_header_details(employee, month, staff_df=None, sales_df=None, po
     region_raw = str(r.get("Region_Name") or r.get("REGION") or "").strip()
     base_name = str(r.get("Base_Name") or "").strip()
     zone_name = str(r.get("Zone_Name") or r.get("ZONE") or "").strip()
+    sub_zone_name = str(r.get("Sub_Zone") or r.get("SUB_ZONE") or "").strip()
 
     if desg in ("HOD", "EXEC"):
         region_display = zone_name if zone_name and zone_name != "HEAD OFFICE" else "NATIONAL"
@@ -180,7 +181,15 @@ def get_dynamic_header_details(employee, month, staff_df=None, sales_df=None, po
             region_display = "GENERAL"
 
     line1 = f"{name} Dashboard - {team_display}"
-    sub_parts = [p for p in (dept_code, terr_code, region_display, month_display) if p]
+    sub_parts = [p for p in (
+        desg if desg not in ("NAN", "NONE") else "",
+        dept_code,
+        terr_code,
+        region_display,
+        f"Zone: {zone_name}" if zone_name and zone_name.upper() not in ("NAN", "NONE") else "",
+        f"Sub Zone: {sub_zone_name}" if sub_zone_name and sub_zone_name.upper() not in ("NAN", "NONE") else "",
+        month_display,
+    ) if p]
     line2 = " | ".join(sub_parts)
     full_title = f"{line1} | {line2}"
 
@@ -190,10 +199,10 @@ def get_dynamic_header_details(employee, month, staff_df=None, sales_df=None, po
 def build_dynamic_header(employee, month, staff_df=None, sales_df=None, pos_code=None, territory=None, team_hint=None, active_category=None):
     """
     Constructs dynamic header in the format:
-    [Employee Name] Dashboard - [Team] | [Department] | [Territory Code] | [Region] | [Month Year]
+    [Employee Name] Dashboard - [Team] | [Designation] | [Department] | [Territory Code] | [Region] | [Zone] | [Sub Zone] | [Month Year]
 
     Example:
-    ABDUL KHALIL Dashboard - PHARMA | PHR | GUJ01-PHR-MIO-05 | GUJRANWALA | September 2026
+    ABDUL KHALIL Dashboard - PHARMA | MIO | PHR | GUJ01-PHR-MIO-05 | GUJRANWALA | Zone: NORTH | Sub Zone: NORTH-A | September 2026
     """
     _, _, full_title = get_dynamic_header_details(
         employee=employee,

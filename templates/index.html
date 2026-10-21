@@ -45,9 +45,9 @@
                 <button type="button" id="filter-toggle-btn" class="filter-toggle-btn" onclick="toggleFilters()"
                     aria-controls="filter-panel-box" aria-expanded="false">Filter</button>
                 <nav class="summary-toggle" aria-label="Employee summaries">
-                    <span>Summary</span>
-                    <a href="{{ route_url('summary_page', category='PHARMA', month=selected_month) }}" onclick="openSummary(event, this)">Pharma</a>
-                    <a href="{{ route_url('summary_page', category='FMCG', month=selected_month) }}" onclick="openSummary(event, this)">FMCG</a>
+                    <a href="{{ route_url('summary_page', category='ALL', month=selected_month) }}" class="summary-main-link" onclick="openSummary(event, this)">Summary</a>
+                    <a href="{{ route_url('index', team='PHARMA', month=selected_month) }}" class="{% if selected_team == 'PHARMA' or (not selected_team and active_category == 'pharma') %}is-active{% endif %}" onclick="switchDashboardTeam(event, this, 'PHARMA')"{% if selected_team == 'PHARMA' or (not selected_team and active_category == 'pharma') %} aria-current="page"{% endif %}>Pharma</a>
+                    <a href="{{ route_url('index', team='FMCG', month=selected_month) }}" class="{% if selected_team == 'FMCG' or (not selected_team and result and active_category != 'pharma') %}is-active{% endif %}" onclick="switchDashboardTeam(event, this, 'FMCG')"{% if selected_team == 'FMCG' or (not selected_team and result and active_category != 'pharma') %} aria-current="page"{% endif %}>FMCG</a>
                 </nav>
                 <button type="button" class="filter-toggle-btn" onclick="resetDashboard()">Reset</button>
                 <button type="button" class="filter-toggle-btn" onclick="exportDashboardCsv()">Export CSV</button>
@@ -59,6 +59,7 @@
         <!-- Filter Bar Component (Executive Filter Template with Navy Blue theme) -->
         <section class="filters-component" id="filter-panel-box" hidden>
             <form method="POST" action="{{ request.scope.get('root_path', '') }}/" id="filter-form" class="filters-bar-form">
+                <input type="hidden" name="team" value="{{ selected_team }}">
                 <!-- Designation -->
                 <div class="filter search-select-wrap" data-search-placeholder="Search designation..." data-search-title="Designation">
                     <span>Designation</span>

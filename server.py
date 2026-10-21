@@ -59,8 +59,8 @@ def create_app():
 
     @fastapi_app.get("/summary", name="summary_page")
     def summary_page(request: Request):
-        category = request.query_params.get("category", "PHARMA").strip().upper()
-        if category not in ("PHARMA", "FMCG"):
+        category = request.query_params.get("category", "ALL").strip().upper()
+        if category not in ("ALL", "PHARMA", "FMCG"):
             raise HTTPException(status_code=404)
 
         months = load_reporting_months() or ["July,26", "August,26"]
@@ -74,8 +74,9 @@ def create_app():
             month_sales = sales_df[sales_df["REPORTING_MONTH"].astype(str).str.strip().eq(month)]
         else:
             month_sales = sales_df
-        employees = [item for item in employee_directory(staff_df, month_sales)
-                     if item["category"] == category]
+        employees = employee_directory(staff_df, month_sales)
+        if category != "ALL":
+            employees = [item for item in employees if item["category"] == category]
         designations = sorted({item["designation"] for item in employees if item["designation"]})
         designation = request.query_params.get("designation", "").strip()
         if designation not in designations:

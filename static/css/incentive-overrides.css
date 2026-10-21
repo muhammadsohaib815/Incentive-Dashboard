@@ -206,6 +206,11 @@ body.incentive-page {
             font-weight: 700;
         }
 
+        .header-controls .summary-toggle .summary-main-link {
+            color: #fff;
+            background: transparent;
+        }
+
         .header-controls .summary-toggle a {
             display: inline-flex;
             align-items: center;
@@ -222,6 +227,17 @@ body.incentive-page {
         .header-controls .summary-toggle a:hover,
         .header-controls .summary-toggle a:focus-visible {
             background: #DBEAFE;
+        }
+
+        .header-controls .summary-toggle .summary-main-link:hover,
+        .header-controls .summary-toggle .summary-main-link:focus-visible {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .header-controls .summary-toggle a.is-active {
+            background: #DBEAFE;
+            box-shadow: inset 0 0 0 1px #93C5FD;
         }
 
         #filter-panel-box[hidden] {

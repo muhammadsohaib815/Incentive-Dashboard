@@ -23,6 +23,17 @@ let celebrationAnimationId = null;
             window.location.assign(url.toString());
         }
 
+        function switchDashboardTeam(event, link, team) {
+            event.preventDefault();
+            const form = document.getElementById('filter-form');
+            const url = new URL(link.href, window.location.href);
+            const month = form && form.month ? form.month.value : '';
+            url.search = '';
+            url.searchParams.set('team', team);
+            if (month) url.searchParams.set('month', month);
+            window.location.assign(url.toString());
+        }
+
         function resetDashboard() {
             const form = document.getElementById('filter-form');
             const url = new URL(form ? form.action : window.location.pathname, window.location.href);
@@ -229,15 +240,17 @@ let celebrationAnimationId = null;
                     const regVal = form.region ? form.region.value : '';
                     const zoneVal = form.zone ? form.zone.value : '';
                     const szVal = form.subzone ? form.subzone.value : '';
+                    const teamVal = form.team ? form.team.value : '';
                     if (desgVal) params.set('designation', desgVal);
                     if (empVal) params.set('employee', empVal);
                     if (terrVal) params.set('territory', terrVal);
                     if (regVal) params.set('region', regVal);
                     if (zoneVal) params.set('zone', zoneVal);
                     if (szVal) params.set('subzone', szVal);
+                    if (teamVal) params.set('team', teamVal);
                     if (monthVal) params.set('month', monthVal);
                     const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-                    window.history.pushState({ designation: desgVal, employee: empVal, territory: terrVal, region: regVal, zone: zoneVal, subzone: szVal, month: monthVal }, '', newUrl);
+                    window.history.pushState({ designation: desgVal, employee: empVal, territory: terrVal, region: regVal, zone: zoneVal, subzone: szVal, team: teamVal, month: monthVal }, '', newUrl);
                 }
 
                 // 6. Rebind events & restart celebration if applicable
@@ -891,6 +904,7 @@ let celebrationAnimationId = null;
                 if (form.region) form.region.value = urlParams.get('region') || '';
                 if (form.zone) form.zone.value = urlParams.get('zone') || '';
                 if (form.subzone) form.subzone.value = urlParams.get('subzone') || '';
+                if (form.team) form.team.value = urlParams.get('team') || '';
                 if (form.month) form.month.value = urlParams.get('month') || 'July,26';
 
                 document.querySelectorAll('.search-select-wrap select').forEach(sel => {
