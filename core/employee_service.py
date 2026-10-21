@@ -309,7 +309,7 @@ def get_employee_info(employee, target_df, sales_df, staff_df=None, pos_code=Non
 
     desg, team, nature_type, payroll_type, doj, region, dept_territory, resolved_pos = "", "", "", "", "", "", "", ""
 
-    # 1. Primary extraction from GSM Field Force Master Staff List 2026-27.xlsx
+    # 1. Primary extraction from staff_master database table
     if staff_df is not None and not staff_df.empty:
         matches = pd.DataFrame()
         if pos_code and "Position_Code" in staff_df.columns:
