@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category }} Employee Incentive Summary - {{ month }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/incentive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/incentive-overrides.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/summary.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="incentive-page summary-page">
+    <main class="container">
+        <header class="header summary-header">
+            <div class="header-brand">
+                <div class="header-icon-box" aria-hidden="true">
+                    <img src="{{ url_for('static', path='header_metrics_icon_blue.png') }}" alt="" class="header-metrics-img">
+                </div>
+                <div class="header-text">
+                    <h1 class="header-title">Employee Incentive Summary</h1>
+                    <p class="header-subtitle">{{ category }} · {{ month_options | selectattr('value', 'equalto', month) | map(attribute='label') | first }}</p>
+                </div>
+            </div>
+            <nav class="summary-nav" aria-label="Summary category">
+                <a href="{{ route_url('index', month=month) }}" class="summary-nav-btn">Dashboard</a>
+                <a href="{{ route_url('summary_page', category='PHARMA', month=month) }}" class="summary-nav-btn{% if category == 'PHARMA' %} is-active{% endif %}"{% if category == 'PHARMA' %} aria-current="page"{% endif %}>Pharma</a>
+                <a href="{{ route_url('summary_page', category='FMCG', month=month) }}" class="summary-nav-btn{% if category == 'FMCG' %} is-active{% endif %}"{% if category == 'FMCG' %} aria-current="page"{% endif %}>FMCG</a>
+            </nav>
+        </header>
+
+        <section class="summary-panel" aria-labelledby="summary-heading">
+            <div class="summary-topline">
+                <div>
+                    <h2 id="summary-heading">{{ 'Pharma' if category == 'PHARMA' else 'FMCG' }} employees</h2>
+                    <p>{{ total }} employee{{ '' if total == 1 else 's' }} · {{ month_options | selectattr('value', 'equalto', month) | map(attribute='label') | first }}</p>
+                </div>
+                <div class="summary-export-actions">
+                    <button type="button" id="summary-csv-btn" class="summary-action-btn">Export page CSV</button>
+                    <button type="button" class="summary-action-btn" onclick="window.print()">Print PDF</button>
+                </div>
+            </div>
+
+            <form method="GET" action="{{ route_url('summary_page') }}" class="summary-search-form">
+                <input type="hidden" name="category" value="{{ category }}">
+                <label for="summary-month">Reporting month
+                    <select id="summary-month" name="month">
+                        {% for option in month_options %}
+                        <option value="{{ option.value }}"{% if option.value == month %} selected{% endif %}>{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label for="summary-designation">Designation
+                    <select id="summary-designation" name="designation">
+                        <option value="">All designations</option>
+                        {% for item in designations %}
+                        <option value="{{ item }}"{% if item == designation %} selected{% endif %}>{{ item }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label for="summary-sort">Payout order (this page)
+                    <select id="summary-sort" name="sort">
+                        <option value="">Employee name</option>
+                        <option value="highest"{% if payout_sort == 'highest' %} selected{% endif %}>Highest payout first</option>
+                        <option value="lowest"{% if payout_sort == 'lowest' %} selected{% endif %}>Lowest payout first</option>
+                    </select>
+                </label>
+                <label for="summary-search">Find employee
+                    <input id="summary-search" type="search" name="q" value="{{ search }}" placeholder="Name, code, territory or region">
+                </label>
+                <button type="submit" class="summary-action-btn summary-search-btn">Show</button>
+            </form>
+
+            <div class="summary-table-scroll">
+                <table class="summary-table" id="employee-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Employee &amp; personal info</th>
+                            <th>Team wise</th>
+                            <th>Team bottom line</th>
+                            <th>Team incentive</th>
+                            <th>1 Million Privilege</th>
+                            <th>Other bonuses</th>
+                            <th>Final payout</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td>
+                                <a class="summary-employee-name" href="{{ route_url('index', employee=row.label, month=month) }}">{{ row.name }}</a>
+                                <div class="summary-meta">{{ row.designation or '—' }} · {{ row.position or '—' }}</div>
+                                <div class="summary-meta">{{ row.territory or '—' }}</div>
+                                <div class="summary-meta">{{ [row.region, row.zone, row.subzone] | select | join(' · ') }}</div>
+                            </td>
+                            {% if row.error %}
+                            <td colspan="6" class="summary-error">{{ row.error }}</td>
+                            {% else %}
+                            <td>
+                                <strong>{{ row.team_name }}</strong>
+                                <div class="summary-meta">{{ row.status }}</div>
+                            </td>
+                            <td>
+                                {% if row.bottom_line %}
+                                <strong>{{ '%.1f'|format(row.bottom_line.achievement) }}%</strong>
+                                <div class="summary-meta">Rs. {{ '{:,.0f}'.format(row.bottom_line.actual) }} / {{ '{:,.0f}'.format(row.bottom_line.target) }}</div>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td class="summary-money">Rs. {{ '{:,.0f}'.format(row.team_incentive) }}</td>
+                            <td>
+                                {% if row.privilege_amount is not none %}
+                                <strong>Rs. {{ '{:,.0f}'.format(row.privilege_amount) }}</strong>
+                                <div class="summary-meta">{{ row.privilege_status }}</div>
+                                {% else %}<span class="summary-meta">Not applicable</span>{% endif %}
+                            </td>
+                            <td class="summary-money">Rs. {{ '{:,.0f}'.format(row.other_bonus) }}</td>
+                            <td class="summary-money summary-final">Rs. {{ '{:,.0f}'.format(row.final_payout) }}</td>
+                            {% endif %}
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="summary-empty">No employees match this category and search.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="summary-footer">
+                <span>{% if total %}Showing {{ (page - 1) * 20 + 1 }}–{{ [(page * 20), total] | min }} of {{ total }}{% else %}No employees{% endif %}</span>
+                <div class="summary-pagination">
+                    {% if page > 1 %}<a href="{{ route_url('summary_page', category=category, month=month, q=search, designation=designation, sort=payout_sort, page=page-1) }}">Previous</a>{% endif %}
+                    <span>Page {{ page }} of {{ page_count }}</span>
+                    {% if page < page_count %}<a href="{{ route_url('summary_page', category=category, month=month, q=search, designation=designation, sort=payout_sort, page=page+1) }}">Next</a>{% endif %}
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="{{ url_for('static', path='js/summary.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+body.incentive-page.summary-page { zoom: 1; }
+
+.summary-page .summary-header { margin-bottom: 16px !important; }
+.summary-page .summary-nav,
+.summary-page .summary-export-actions,
+.summary-page .summary-pagination { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.summary-page .summary-nav { margin-left: auto; }
+.summary-page .summary-nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 9px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.summary-page .summary-nav-btn:hover { background: rgba(255,255,255,.15); }
+.summary-page .summary-nav-btn.is-active { background: #fff; color: #0B1F44; }
+
+.summary-page .summary-panel {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #BFDBFE;
+    border-radius: 14px;
+    box-shadow: 0 5px 22px rgba(11,31,68,.08);
+}
+.summary-page .summary-topline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 18px 20px 12px;
+}
+.summary-page .summary-topline h2 { margin: 0; color: #0B1F44; font-size: 20px; }
+.summary-page .summary-topline p { margin: 3px 0 0; color: #526780; font-size: 13px; }
+.summary-page .summary-action-btn {
+    min-height: 36px;
+    padding: 7px 13px;
+    border: 1px solid #93c5fd;
+    border-radius: 8px;
+    background: #EFF6FF;
+    color: #123C7A;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.summary-page .summary-action-btn:hover { background: #DBEAFE; }
+.summary-page .summary-search-form {
+    display: flex;
+    align-items: end;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 0 20px 16px;
+}
+.summary-page .summary-search-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    color: #526780;
+    font-size: 12px;
+    font-weight: 700;
+}
+.summary-page .summary-search-form input,
+.summary-page .summary-search-form select {
+    height: 38px;
+    min-width: 170px;
+    padding: 0 10px;
+    border: 1px solid #BFDBFE;
+    border-radius: 7px;
+    background: #fff;
+    color: #0B1F44;
+    font: inherit;
+    font-size: 13px;
+}
+.summary-page .summary-search-form input { min-width: 270px; }
+.summary-page .summary-table-scroll { overflow-x: auto; }
+.summary-page .summary-table { width: 100%; min-width: 1180px; border-collapse: collapse; }
+.summary-page .summary-table th {
+    padding: 12px 13px;
+    background: #0B1F44;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+}
+.summary-page .summary-table td {
+    padding: 12px 13px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #0B1F44;
+    font-size: 12px;
+    vertical-align: top;
+}
+.summary-page .summary-table tbody tr:nth-child(even) { background: #f8fbff; }
+.summary-page .summary-table tbody tr:hover { background: #EFF6FF; }
+.summary-page .summary-employee-name { color: #123C7A; font-size: 13px; font-weight: 800; text-decoration: none; }
+.summary-page .summary-employee-name:hover { text-decoration: underline; }
+.summary-page .summary-meta { margin-top: 3px; color: #64748B; font-size: 11px; line-height: 1.35; }
+.summary-page .summary-money { white-space: nowrap; font-weight: 700; }
+.summary-page .summary-final { color: #1D4ED8 !important; font-size: 13px !important; font-weight: 800 !important; }
+.summary-page .summary-error { color: #b91c1c !important; }
+.summary-page .summary-empty { padding: 34px !important; text-align: center; color: #64748B !important; }
+.summary-page .summary-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 13px 20px;
+    color: #526780;
+    font-size: 12px;
+}
+.summary-page .summary-pagination a { color: #1D4ED8; font-weight: 700; text-decoration: none; }
+.summary-page .summary-pagination a:hover { text-decoration: underline; }
+
+@media print {
+    body.incentive-page.summary-page { zoom: 1 !important; }
+    .summary-page .summary-nav,
+    .summary-page .summary-export-actions,
+    .summary-page .summary-search-form,
+    .summary-page .summary-footer { display: none !important; }
+    .summary-page .summary-panel { border: 0; box-shadow: none; }
+    .summary-page .summary-table-scroll { overflow: visible; }
+    .summary-page .summary-table { min-width: 0; }
+    .summary-page .summary-table th,
+    .summary-page .summary-table td { font-size: 9px; padding: 5px; }
+    .summary-page .summary-table tr { break-inside: avoid; }
+}

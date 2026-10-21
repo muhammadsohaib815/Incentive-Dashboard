@@ -50,7 +50,7 @@ def _int_setting(name, default, minimum, maximum):
 
 
 def configure_database_pool(pool, slots, metrics, acquire_timeout_seconds):
-    """Use the parent FastAPI pool when this Flask app is mounted there."""
+    """Use the parent FastAPI application's database pool when mounted there."""
     global POOL, POOL_SLOTS, POOL_METRICS, POOL_ACQUIRE_TIMEOUT_SECONDS
     with _POOL_LOCK:
         previous = POOL
@@ -63,7 +63,7 @@ def configure_database_pool(pool, slots, metrics, acquire_timeout_seconds):
 
 
 def _pool_bundle():
-    """Lazily create a thread-safe pool only for standalone Flask execution."""
+    """Lazily create a thread-safe pool for standalone server execution."""
     global POOL, POOL_SLOTS, POOL_METRICS, POOL_ACQUIRE_TIMEOUT_SECONDS
     if POOL is None:
         with _POOL_LOCK:
@@ -212,17 +212,23 @@ def _rename_target_columns(target: pd.DataFrame) -> pd.DataFrame:
 
 
 @lru_cache(maxsize=1)
-def load_datasets():
-    """Return target, sales and staff-compatible frames from PostgreSQL."""
+def load_datasets(reporting_month=None):
+    """Return target, sales and staff-compatible frames from PostgreSQL.
+
+    Pass a reporting month to fetch only that month's sales. The no-argument
+    form remains available for other callers that need the full fiscal year.
+    """
     staff = load_staff_df()
     target = _rename_target_columns(_read_sql("SELECT * FROM target_data"))
 
     # Filter at SQL level by fiscal year; product-group filtering below mirrors
     # the previous loader and keeps the incentive rules focused and fast.
-    sales = _read_sql(
-        "SELECT * FROM sales_data WHERE fiscal_year = %s",
-        ["2026-27"],
-    )
+    sales_sql = "SELECT * FROM sales_data WHERE fiscal_year = %s"
+    sales_params = ["2026-27"]
+    if reporting_month:
+        sales_sql += " AND reporting_month = %s"
+        sales_params.append(str(reporting_month).strip())
+    sales = _read_sql(sales_sql, sales_params)
     if not sales.empty:
         sales = sales.rename(columns={c: c.upper() for c in sales.columns})
         if "EMPLOYEE_NAME" in sales.columns:
@@ -268,6 +274,22 @@ def load_datasets():
 
     target_master_col = "Product Group On Master" if "Product Group On Master" in target.columns else None
     return target, sales, target_master_col
+
+
+@lru_cache(maxsize=1)
+def load_reporting_months():
+    """Return available reporting months without loading sales rows."""
+    months = _read_sql(
+        "SELECT DISTINCT reporting_month FROM sales_data "
+        "WHERE fiscal_year = %s AND reporting_month IS NOT NULL",
+        ["2026-27"],
+    )
+    if months.empty:
+        return []
+    return sorted(
+        (str(value).strip() for value in months.iloc[:, 0].dropna() if str(value).strip()),
+        key=lambda value: pd.to_datetime(value, format="%B,%y", errors="coerce"),
+    )
 
 
 @lru_cache(maxsize=1)

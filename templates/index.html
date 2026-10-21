@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% if header_title %}{{ header_title }}{% elif result and result.header_title %}{{ result.header_title }}{% elif result %}{{ result.employee }} - Field Force Incentives Dashboard{% else %}Field Force Incentives Dashboard{% endif %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/incentive.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/incentive-overrides.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/incentive.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/incentive-overrides.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
         <header class="header">
             <div class="header-brand">
                 <div class="header-icon-box" title="Activity &amp; Metrics">
-                    <img src="{{ url_for('static', filename='header_metrics_icon_blue.png') }}" alt="Activity Metrics"
+                    <img src="{{ url_for('static', path='header_metrics_icon_blue.png') }}" alt="Activity Metrics"
                         class="header-metrics-img"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <svg class="header-metrics-svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
@@ -42,14 +42,23 @@
                 </div>
             </div>
             <div class="header-controls">
-                <button type="button" id="filter-toggle-btn" class="filter-toggle-btn"
+                <button type="button" id="filter-toggle-btn" class="filter-toggle-btn" onclick="toggleFilters()"
                     aria-controls="filter-panel-box" aria-expanded="false">Filter</button>
+                <nav class="summary-toggle" aria-label="Employee summaries">
+                    <span>Summary</span>
+                    <a href="{{ route_url('summary_page', category='PHARMA', month=selected_month) }}" onclick="openSummary(event, this)">Pharma</a>
+                    <a href="{{ route_url('summary_page', category='FMCG', month=selected_month) }}" onclick="openSummary(event, this)">FMCG</a>
+                </nav>
+                <button type="button" class="filter-toggle-btn" onclick="resetDashboard()">Reset</button>
+                <button type="button" class="filter-toggle-btn" onclick="exportDashboardCsv()">Export CSV</button>
+                <button type="button" class="filter-toggle-btn" onclick="printDashboardPdf()"
+                    title="Choose Save as PDF in the print dialog">Print PDF</button>
             </div>
         </header>
 
         <!-- Filter Bar Component (Executive Filter Template with Navy Blue theme) -->
         <section class="filters-component" id="filter-panel-box" hidden>
-            <form method="POST" action="{{ request.script_root }}/" id="filter-form" class="filters-bar-form">
+            <form method="POST" action="{{ request.scope.get('root_path', '') }}/" id="filter-form" class="filters-bar-form">
                 <!-- Designation -->
                 <div class="filter search-select-wrap" data-search-placeholder="Search designation..." data-search-title="Designation">
                     <span>Designation</span>
@@ -3535,7 +3544,7 @@
 
     <!-- Celebration Overlay Container (Refreshed via AJAX) -->
     <div id="celebration-overlay-container">
-        {% if result and result.final_payout and result.final_payout > 0 and not request.args.get('no_overlay') %}
+        {% if result and result.final_payout and result.final_payout > 0 and not request.query_params.get('no_overlay') %}
         <!-- Celebration Overlay & Animation -->
         <div id="celebration-overlay" class="celebration-overlay">
             <div class="celebration-banner">
@@ -3556,7 +3565,7 @@
         </div>
         {% endif %}
     </div>
-    <script src="{{ url_for('static', filename='js/incentive-dashboard.js') }}"></script>
+    <script src="{{ url_for('static', path='js/incentive-dashboard.js') }}"></script>
 </body>
 
 </html>

@@ -9,10 +9,16 @@ Usage:
     python server.py --prod
 """
 import argparse
+import logging
 import os
 import sys
 from pathlib import Path
-from flask import Flask, render_template, request
+from urllib.parse import urlencode, quote
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import pandas as pd
 
 # Ensure project root is in sys.path
@@ -20,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from core.db_loader import load_datasets, load_staff_df
+from core.db_loader import load_datasets, load_reporting_months, load_staff_df
 from core.employee_service import (
     format_display_month,
     resolve_employee_selection,
@@ -29,31 +35,111 @@ from core.employee_service import (
     is_unmapped_or_vacant,
 )
 from core.engine import calculate_all_incentives
+from core.summary import employee_directory, sales_for_employee, summarize_employee
 
 
 def create_app():
-    flask_app = Flask(
-        __name__,
-        template_folder=str(BASE_DIR / "templates"),
-        static_folder=str(BASE_DIR / "static"),
-    )
+    fastapi_app = FastAPI(title="DKT Sales Incentive Dashboard")
+    templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+    logger = logging.getLogger("uvicorn.error")
+    fastapi_app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-    @flask_app.after_request
-    def set_utf8_charset(response):
-        if response.mimetype == "text/html":
-            response.headers["Content-Type"] = "text/html; charset=utf-8"
-        return response
+    def route_url(endpoint, **values):
+        routes = {"index": "/", "summary_page": "/summary"}
+        if endpoint == "static":
+            return "/static/" + quote(str(values.pop("filename", "")), safe="/")
+        path = routes.get(endpoint, "/")
+        return path + ("?" + urlencode(values, doseq=True) if values else "")
 
-    @flask_app.route("/health", methods=["GET"])
+    templates.env.globals["route_url"] = route_url
+
+    @fastapi_app.get("/health")
     def health():
         return {"status": "ok", "app": "incentive_website"}
 
-    @flask_app.route("/", methods=["GET", "POST"])
-    @flask_app.route("/incentive", methods=["GET", "POST"])
-    @flask_app.route("/incentive/", methods=["GET", "POST"])
-    def index():
+    @fastapi_app.get("/summary", name="summary_page")
+    def summary_page(request: Request):
+        category = request.query_params.get("category", "PHARMA").strip().upper()
+        if category not in ("PHARMA", "FMCG"):
+            raise HTTPException(status_code=404)
+
+        months = load_reporting_months() or ["July,26", "August,26"]
+        month = request.query_params.get("month", "July,26")
+        if month not in months:
+            month = months[0]
+
+        target_df, sales_df, target_master_col = load_datasets(month)
+        staff_df = load_staff_df()
+        if not sales_df.empty and "REPORTING_MONTH" in sales_df:
+            month_sales = sales_df[sales_df["REPORTING_MONTH"].astype(str).str.strip().eq(month)]
+        else:
+            month_sales = sales_df
+        employees = [item for item in employee_directory(staff_df, month_sales)
+                     if item["category"] == category]
+        designations = sorted({item["designation"] for item in employees if item["designation"]})
+        designation = request.query_params.get("designation", "").strip()
+        if designation not in designations:
+            designation = ""
+        if designation:
+            employees = [item for item in employees if item["designation"] == designation]
+        payout_sort = request.query_params.get("sort", "").strip().lower()
+        if payout_sort not in ("highest", "lowest"):
+            payout_sort = ""
+        search = request.query_params.get("q", "").strip()[:80]
+        if search:
+            term = search.casefold()
+            employees = [item for item in employees if term in " ".join(
+                str(item[field]) for field in ("name", "position", "territory", "designation", "region", "zone")
+            ).casefold()]
+
+        page_size = 20
+        try:
+            requested_page = int(request.query_params.get("page", "1"))
+        except ValueError:
+            requested_page = 1
+        page_count = max(1, (len(employees) + page_size - 1) // page_size)
+        page = min(max(requested_page, 1), page_count)
+        current = employees[(page - 1) * page_size:page * page_size]
+
+        rows = []
+        for employee in current:
+            try:
+                scoped_sales = sales_for_employee(employee, month_sales, staff_df)
+                result = calculate_all_incentives(
+                    employee=employee["name"], month=month, target_df=target_df,
+                    sales_df=scoped_sales, target_master_col=target_master_col,
+                    staff_df=staff_df, pos_code=employee["position"],
+                    territory=employee["territory"],
+                )
+                rows.append(summarize_employee(employee, result))
+            except Exception:
+                logger.exception("Unable to calculate summary for %s", employee["position"])
+                rows.append({**employee, "error": "Unable to calculate"})
+
+        if payout_sort:
+            rows.sort(
+                key=lambda row: float(row.get("final_payout", 0) or 0),
+                reverse=payout_sort == "highest",
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="summary.html",
+            context={
+                "category": category, "rows": rows, "month": month,
+                "month_options": [{"value": value, "label": format_display_month(value)} for value in months],
+                "search": search, "total": len(employees), "page": page, "page_count": page_count,
+                "designations": designations, "designation": designation, "payout_sort": payout_sort,
+            },
+        )
+
+    def build_index_context(values):
         """Render filters immediately; calculate only after employee selection."""
-        target_df, sales_df, target_master_col = load_datasets()
+        months = load_reporting_months() or ["July,26", "August,26"]
+        selected_month = values.get("month") or "July,26"
+        if selected_month not in months:
+            selected_month = months[0]
+        target_df, sales_df, target_master_col = load_datasets(selected_month)
         staff_df = load_staff_df()
 
         # Build employee list, metadata and team mapping (excluding unmapped and vacant positions)
@@ -132,12 +218,12 @@ def create_app():
         zones = sorted(list({m["zone"] for m in emp_meta.values() if m.get("zone")}))
         sub_zones = sorted(list({m["sub_zone"] for m in emp_meta.values() if m.get("sub_zone")}))
 
-        selected_designation = request.form.get("designation") or request.args.get("designation") or ""
-        selected_territory = request.form.get("territory") or request.args.get("territory") or ""
-        selected_region = request.form.get("region") or request.args.get("region") or ""
-        selected_zone = request.form.get("zone") or request.args.get("zone") or ""
-        selected_subzone = request.form.get("subzone") or request.args.get("subzone") or ""
-        selected_team = request.form.get("team") or request.args.get("team") or ""
+        selected_designation = values.get("designation") or ""
+        selected_territory = values.get("territory") or ""
+        selected_region = values.get("region") or ""
+        selected_zone = values.get("zone") or ""
+        selected_subzone = values.get("subzone") or ""
+        selected_team = values.get("team") or ""
         team_options = [
             {"value": "", "label": "ALL TEAMS"},
             {"value": "PHARMA", "label": "PHARMACEUTICAL"},
@@ -151,18 +237,9 @@ def create_app():
         else:
             employees = all_employees
 
-        # Get available months from sales data
-        months = ["July,26", "August,26"]
-        if not sales_df.empty and "REPORTING_MONTH" in sales_df.columns:
-            sales_months = [str(m).strip() for m in sales_df["REPORTING_MONTH"].dropna().unique()]
-            for m in sales_months:
-                if m not in months:
-                    months.append(m)
-
         month_options = [{"value": m, "label": format_display_month(m)} for m in months]
 
-        selected_employee = request.form.get("employee") or request.args.get("employee") or ""
-        selected_month = request.form.get("month") or request.args.get("month") or "July,26"
+        selected_employee = values.get("employee") or ""
 
         if not selected_employee and selected_territory:
             for emp_lbl, meta in emp_meta.items():
@@ -215,36 +292,46 @@ def create_app():
             selected_zone = m.get("zone", "") or selected_zone
             selected_subzone = m.get("sub_zone", "") or selected_subzone
 
-        return render_template(
-            "index.html",
-            employees=employees,
-            all_employees=all_employees,
-            emp_meta=emp_meta,
-            designations=designations,
-            territories=territories,
-            regions=regions,
-            zones=zones,
-            sub_zones=sub_zones,
-            selected_designation=selected_designation,
-            selected_territory=selected_territory,
-            selected_region=selected_region,
-            selected_zone=selected_zone,
-            selected_subzone=selected_subzone,
-            months=months,
-            month_options=month_options,
-            team_options=team_options,
-            selected_team=selected_team,
-            emp_team_map=emp_team_map,
-            selected_employee=selected_employee,
-            selected_month=selected_month,
-            active_category=active_category,
-            result=result,
-            header_title=header_title,
-            header_main=header_main,
-            header_sub=header_sub
-        )
+        return {
+            "employees": employees,
+            "all_employees": all_employees,
+            "emp_meta": emp_meta,
+            "designations": designations,
+            "territories": territories,
+            "regions": regions,
+            "zones": zones,
+            "sub_zones": sub_zones,
+            "selected_designation": selected_designation,
+            "selected_territory": selected_territory,
+            "selected_region": selected_region,
+            "selected_zone": selected_zone,
+            "selected_subzone": selected_subzone,
+            "months": months,
+            "month_options": month_options,
+            "team_options": team_options,
+            "selected_team": selected_team,
+            "emp_team_map": emp_team_map,
+            "selected_employee": selected_employee,
+            "selected_month": selected_month,
+            "active_category": active_category,
+            "result": result,
+            "header_title": header_title,
+            "header_main": header_main,
+            "header_sub": header_sub,
+        }
 
-    return flask_app
+    @fastapi_app.api_route("/", methods=["GET", "POST"], name="index")
+    @fastapi_app.api_route("/incentive", methods=["GET", "POST"])
+    @fastapi_app.api_route("/incentive/", methods=["GET", "POST"])
+    async def index(request: Request):
+        values = dict(request.query_params)
+        if request.method == "POST":
+            form_values = await request.form()
+            values.update(dict(form_values))
+        context = await run_in_threadpool(build_index_context, values)
+        return templates.TemplateResponse(request=request, name="index.html", context=context)
+
+    return fastapi_app
 
 
 app = create_app()
@@ -281,7 +368,7 @@ def parse_args():
     parser.add_argument(
         "--prod",
         action="store_true",
-        help="Run with production WSGI server (Waitress) to eliminate development server warning",
+        help="Disable development auto-reload",
     )
     return parser.parse_args()
 
@@ -291,30 +378,23 @@ def main():
     banner = "=" * 70
     print(banner)
     print(" DKT Sales Incentive Calculation & Dashboard System")
-    print(" Unified Web & API Server (server.py)")
+    print(" FastAPI Web & API Server (Uvicorn)")
     print(banner)
     print(f" -> Web Dashboard (Frontend): http://{args.host}:{args.port}/")
     print(f" -> Incentive Dashboard:      http://{args.host}:{args.port}/incentive/")
     print(f" -> Health Check:             http://{args.host}:{args.port}/health")
-    if args.prod:
-        print(f" -> Server Engine:            Production WSGI (Waitress)")
-    else:
-        print(f" -> Server Engine:            Flask Development Server")
-        print(f" -> Debug Mode:               {args.debug}")
+    print(" -> Server Engine:            FastAPI (Uvicorn)")
+    print(f" -> Auto Reload:              {args.debug and not args.prod}")
     print(banner)
     print("Press Ctrl+C to stop the server.\n")
 
-    if args.prod:
-        try:
-            from waitress import serve
-            serve(app, host=args.host, port=args.port)
-        except ImportError:
-            print("[WARNING] 'waitress' package is not installed. To use production mode, run:")
-            print("          pip install waitress\n")
-            print("Falling back to standard Flask server...\n")
-            app.run(host=args.host, port=args.port, debug=False)
-    else:
-        app.run(host=args.host, port=args.port, debug=args.debug)
+    import uvicorn
+    uvicorn.run(
+        "server:app" if args.debug and not args.prod else app,
+        host=args.host,
+        port=args.port,
+        reload=args.debug and not args.prod,
+    )
 
 
 if __name__ == "__main__":

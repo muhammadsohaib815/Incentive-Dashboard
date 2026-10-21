@@ -1,12 +1,12 @@
 # DKT Sales Incentive Calculation & Dashboard System
 
-A modular, production-ready Python Flask application for calculating sales incentives, bonuses, and privilege club qualifications across all field designations (SPO, ASM, RSM, TE) and teams (DO, TOUCH, Overlapping, BLISS, GSM).
+A modular, production-ready FastAPI application for calculating sales incentives, bonuses, and privilege club qualifications across all field designations (SPO, ASM, RSM, TE) and teams (DO, TOUCH, Overlapping, BLISS, GSM).
 
 ---
 
 ## ðŸ“ Project Architecture & File Organization
 
-The project has been refactored into a clean, layered architecture separating core computation logic, dataset loading, and the Flask web layer:
+The project has been refactored into a clean, layered architecture separating core computation logic, dataset loading, and the FastAPI web layer:
 
 ```
 incentive_website/
@@ -48,7 +48,7 @@ incentive_website/
 â”œâ”€â”€ tests/                          # ðŸ§ª Test Suite
 â”‚   â””â”€â”€ test_engine.py              # Automated tests verifying calculations against ground truth
 â”‚
-â”œâ”€â”€ server.py                       # ðŸš€ Single Application Entry Point & Web Backend (runs Flask server)
+â”œâ”€â”€ server.py                       # ðŸš€ Single Application Entry Point & Web Backend (runs FastAPI with Uvicorn)
 â”œâ”€â”€ requirements.txt                # ðŸ“¦ Python Dependencies
 â””â”€â”€ README.md                       # ðŸ“– Project Documentation
 ```

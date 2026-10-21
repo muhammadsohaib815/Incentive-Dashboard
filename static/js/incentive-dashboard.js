@@ -13,6 +13,107 @@ let celebrationAnimationId = null;
             btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         }
 
+        function openSummary(event, link) {
+            const form = document.getElementById('filter-form');
+            const month = form && form.month ? form.month.value : '';
+            if (!month) return;
+            event.preventDefault();
+            const url = new URL(link.href);
+            url.searchParams.set('month', month);
+            window.location.assign(url.toString());
+        }
+
+        function resetDashboard() {
+            const form = document.getElementById('filter-form');
+            const url = new URL(form ? form.action : window.location.pathname, window.location.href);
+            url.search = '';
+            url.hash = '';
+            window.location.assign(url.toString());
+        }
+
+        function reportText(root, selector) {
+            const element = root.querySelector(selector);
+            return element ? element.textContent.replace(/\s+/g, ' ').trim() : '';
+        }
+
+        function currentReport() {
+            const area = document.getElementById('dashboard-content-area');
+            if (!area || !area.querySelector('.profile-name')) {
+                window.alert('Select an employee to create a report.');
+                return null;
+            }
+            return area;
+        }
+
+        function exportDashboardCsv() {
+            const area = currentReport();
+            if (!area) return;
+
+            const rows = [['Section', 'Item', 'Value', 'Details']];
+            const add = (section, item, value, details = '') => rows.push([section, item, value, details]);
+            const form = document.getElementById('filter-form');
+            const employee = reportText(area, '.profile-name');
+            const month = form && form.month ? form.month.value : '';
+            add('Report', 'Employee', employee);
+            add('Report', 'Designation', reportText(area, '.profile-badge-desg'));
+            add('Report', 'Reporting month', month);
+            add('Report', 'Status', reportText(area, '.status-pill'));
+            if (form) {
+                [['Designation', 'designation'], ['Dept Terr Code', 'territory'],
+                    ['Region', 'region'], ['Zone', 'zone'], ['Sub Zone', 'subzone']]
+                    .forEach(([label, name]) => {
+                        const field = form.elements.namedItem(name);
+                        if (field && field.value) add('Filter', label, field.value);
+                    });
+            }
+
+            area.querySelectorAll('.metric-card').forEach(card => {
+                add('Metric', reportText(card, '.metric-card-title'),
+                    reportText(card, '.metric-amount'), reportText(card, '.metric-desc'));
+            });
+            area.querySelectorAll('.criterion').forEach(card => {
+                const details = Array.from(card.querySelectorAll('.crit-at-line'))
+                    .map(line => line.textContent.replace(/\s+/g, ' ').trim()).join('; ');
+                add('Criterion', reportText(card, '.criterion-title'),
+                    reportText(card, '.criterion-hero-pct'),
+                    [reportText(card, '.tier-pill'), details].filter(Boolean).join('; '));
+            });
+            area.querySelectorAll('.pharma-prod-card').forEach(card => {
+                const details = Array.from(card.querySelectorAll('.pharma-metric-col'))
+                    .map(col => `${reportText(col, '.pharma-col-lbl')}: ${reportText(col, '.pharma-col-val')}`)
+                    .join('; ');
+                add('Product', reportText(card, '.pharma-prod-name'),
+                    reportText(card, '.pharma-inc-val'),
+                    [reportText(card, '.pharma-hero-pct'), details].filter(Boolean).join('; '));
+            });
+            area.querySelectorAll('#pharma-rsm-staff-table tbody tr').forEach(row => {
+                const values = Array.from(row.querySelectorAll('th, td'))
+                    .map(cell => cell.textContent.replace(/\s+/g, ' ').trim());
+                add('Staff', values[1] || values[0] || '', values[values.length - 1] || '',
+                    values.join(' | '));
+            });
+
+            const escapeCell = value => {
+                let cell = String(value ?? '');
+                if (/^[=+@]|^-[^\d]/.test(cell)) cell = "'" + cell;
+                return '"' + cell.replace(/"/g, '""') + '"';
+            };
+            const csv = '\uFEFF' + rows.map(row => row.map(escapeCell).join(',')).join('\r\n');
+            const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `${employee}_${month}_incentive.csv`.replace(/[^a-z0-9._-]+/gi, '_');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        }
+
+        function printDashboardPdf() {
+            if (!currentReport()) return;
+            window.print();
+        }
+
         function toggleCritRemark(headerEl) {
             const bar = headerEl.closest('.crit-remark-bar');
             if (bar) {
