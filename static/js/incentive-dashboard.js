@@ -1,7 +1,46 @@
 let celebrationAnimationId = null;
-        let scrollListenerAttached = false;
-        let userManuallyToggled = false;
-        let isClosedByScroll = false;
+
+        const headerActionsStorageKey = 'incentive-header-actions-hidden';
+
+        function setHeaderActionsVisible(visible) {
+            const controls = document.getElementById('header-controls');
+            const button = document.getElementById('header-actions-toggle');
+            if (!controls || !button) return;
+
+            controls.hidden = !visible;
+            button.textContent = visible ? 'Hide tabs' : 'Show tabs';
+            button.setAttribute('aria-expanded', String(visible));
+
+            if (!visible) {
+                const filterPanel = document.getElementById('filter-panel-box');
+                const filterButton = document.getElementById('filter-toggle-btn');
+                if (filterPanel) filterPanel.hidden = true;
+                if (filterButton) {
+                    filterButton.classList.remove('is-open');
+                    filterButton.setAttribute('aria-expanded', 'false');
+                }
+            }
+        }
+
+        function toggleHeaderActions() {
+            const controls = document.getElementById('header-controls');
+            if (!controls) return;
+            const visible = controls.hidden;
+            setHeaderActionsVisible(visible);
+            try {
+                sessionStorage.setItem(headerActionsStorageKey, visible ? '0' : '1');
+            } catch (error) {
+                // The control still works when browser storage is unavailable.
+            }
+        }
+
+        function initHeaderActions() {
+            try {
+                setHeaderActionsVisible(sessionStorage.getItem(headerActionsStorageKey) !== '1');
+            } catch (error) {
+                setHeaderActionsVisible(true);
+            }
+        }
 
         function toggleFilters() {
             const box = document.getElementById('filter-panel-box');
@@ -49,7 +88,7 @@ let celebrationAnimationId = null;
 
         function currentReport() {
             const area = document.getElementById('dashboard-content-area');
-            if (!area || !area.querySelector('.profile-name')) {
+            if (!area || !area.querySelector('#dashboard-report-meta')) {
                 window.alert('Select an employee to create a report.');
                 return null;
             }
@@ -63,12 +102,13 @@ let celebrationAnimationId = null;
             const rows = [['Section', 'Item', 'Value', 'Details']];
             const add = (section, item, value, details = '') => rows.push([section, item, value, details]);
             const form = document.getElementById('filter-form');
-            const employee = reportText(area, '.profile-name');
+            const reportMeta = area.querySelector('#dashboard-report-meta').dataset;
+            const employee = reportMeta.employee;
             const month = form && form.month ? form.month.value : '';
             add('Report', 'Employee', employee);
-            add('Report', 'Designation', reportText(area, '.profile-badge-desg'));
+            add('Report', 'Designation', reportMeta.designation);
             add('Report', 'Reporting month', month);
-            add('Report', 'Status', reportText(area, '.status-pill'));
+            add('Report', 'Status', reportMeta.status);
             if (form) {
                 [['Designation', 'designation'], ['Dept Terr Code', 'territory'],
                     ['Region', 'region'], ['Zone', 'zone'], ['Sub Zone', 'subzone']]
@@ -356,44 +396,6 @@ let celebrationAnimationId = null;
                 };
             }
 
-            // Employee Info Preview Bar (closed by default; only opens on explicit Preview click)
-            const infoBar = document.getElementById('emp-info-bar');
-            const toggleBtn = document.getElementById('emp-info-toggle');
-            if (infoBar) {
-                userManuallyToggled = false;
-                isClosedByScroll = true;
-                infoBar.classList.remove('is-open');
-                if (toggleBtn) {
-                    toggleBtn.classList.remove('active');
-                    toggleBtn.setAttribute('aria-expanded', 'false');
-                    toggleBtn.onclick = function (e) {
-                        e.preventDefault();
-                        userManuallyToggled = true;
-                        const isOpen = infoBar.classList.toggle('is-open');
-                        toggleBtn.classList.toggle('active', isOpen);
-                        toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-                        isClosedByScroll = !isOpen;
-                    };
-                }
-
-                if (!scrollListenerAttached) {
-                    scrollListenerAttached = true;
-                    window.addEventListener('scroll', function () {
-                        const currentInfoBar = document.getElementById('emp-info-bar');
-                        const currentToggleBtn = document.getElementById('emp-info-toggle');
-                        if (!currentInfoBar) return;
-                        const scrollY = window.scrollY || window.pageYOffset;
-                        if (scrollY > 45 && !isClosedByScroll) {
-                            currentInfoBar.classList.remove('is-open');
-                            if (currentToggleBtn) {
-                                currentToggleBtn.classList.remove('active');
-                                currentToggleBtn.setAttribute('aria-expanded', 'false');
-                            }
-                            isClosedByScroll = true;
-                        }
-                    }, { passive: true });
-                }
-            }
         }
 
         function closeCelebration() {
@@ -881,6 +883,7 @@ let celebrationAnimationId = null;
 
         // Intercept form submit and popstate
         document.addEventListener('DOMContentLoaded', function () {
+            initHeaderActions();
             attachDynamicEventListeners();
             initCelebrationAnimation();
             initSearchableFilterDropdowns();

@@ -157,7 +157,8 @@ def _bottom_line(result):
 
 
 def summarize_employee(employee, result):
-    privilege = result.get("privilege_club") or result.get("asm_privilege_club")
+    privilege = (result.get("privilege_club") or result.get("asm_privilege_club")
+                 or result.get("rsm_privilege_club"))
     if privilege:
         privilege_amount = privilege.get("incentive", 0)
         privilege_status = privilege.get("status", "")
@@ -173,8 +174,7 @@ def summarize_employee(employee, result):
         "privilege_amount": privilege_amount,
         "privilege_status": privilege_status,
         "other_bonus": (result.get("ucc_incentive") or 0)
-                       + (result.get("bliss_asm_ucc_incentive") or 0)
-                       + (result.get("rsm_privilege_incentive") or 0),
+                       + (result.get("bliss_asm_ucc_incentive") or 0),
         "final_payout": result.get("final_payout", 0),
         "status": result.get("active_tier", ""),
     }

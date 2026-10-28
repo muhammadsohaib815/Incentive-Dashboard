@@ -1,17 +1,127 @@
 """
 Privilege Club Incentive Module
-Calculates Privilege Club (1 Million Net Sales) incentive for:
-- SPOs (Rs. 25,000 for individual 1M net sales)
-- ASMs (Rs. 60,000 if ALL SPOs achieve 1M net sales)
-- RSMs (Rs. 100,000 if ALL ASMs achieve 100% Net Sales target)
+Calculates the 1 Million Privilege Club incentive for:
+- MIOs (Rs. 25,000 for individual 1M net sales)
+- ASMs (Rs. 60,000 if every regional MIO achieves 1M net sales)
+- RSMs (Rs. 100,000 if every regional MIO achieves 1M net sales)
 """
 import pandas as pd
 
 
+MIO_TARGET = 1_000_000.0
+MIO_INCENTIVE = 25_000
+ASM_INCENTIVE = 60_000
+RSM_INCENTIVE = 100_000
+
+
+def _staff_record(staff_df, employee, pos_code):
+    if staff_df is None or staff_df.empty:
+        return None
+    if pos_code and 'Position_Code' in staff_df:
+        match = staff_df[staff_df['Position_Code'].fillna('').astype(str).str.strip().str.upper()
+                         == str(pos_code).strip().upper()]
+        if not match.empty:
+            return match.iloc[0]
+    if employee and 'Employe_Name' in staff_df:
+        match = staff_df[staff_df['Employe_Name'].fillna('').astype(str).str.strip().str.casefold()
+                         == str(employee).strip().casefold()]
+        if not match.empty:
+            return match.iloc[0]
+    return None
+
+
+def _team_family(team_name):
+    return 'PHARMA' if 'PHARM' in str(team_name or '').upper() else 'FMCG'
+
+
+def _regional_mio_breakdown(manager_row, month, sales_df, staff_df):
+    """Return individual 1M progress for MIOs in this manager's region/team."""
+    if manager_row is None or staff_df is None or staff_df.empty:
+        return []
+    region = str(manager_row.get('Region_Name') or '').strip().upper()
+    if not region or 'Region_Name' not in staff_df:
+        return []
+    family = _team_family(manager_row.get('Team_Name'))
+    mios = staff_df[
+        staff_df['Designation_Name'].fillna('').astype(str).str.strip().str.upper().eq('MIO')
+        & staff_df['Region_Name'].fillna('').astype(str).str.strip().str.upper().eq(region)
+        & staff_df['Team_Name'].fillna('').astype(str).str.upper().map(_team_family).eq(family)
+    ].drop_duplicates(subset=['Position_Code'])
+
+    val_col = ('NET_WO_REG_DISC_VALUE' if sales_df is not None and 'NET_WO_REG_DISC_VALUE' in sales_df.columns
+               else 'NET_SALE_VALUE' if sales_df is not None and 'NET_SALE_VALUE' in sales_df.columns
+               else None)
+    if sales_df is None or sales_df.empty or not val_col:
+        month_sales = pd.DataFrame()
+    else:
+        month_sales = sales_df
+        if 'REPORTING_MONTH' in month_sales:
+            month_sales = month_sales[month_sales['REPORTING_MONTH'].fillna('').astype(str).str.strip()
+                                      .eq(str(month).strip())]
+
+    breakdown = []
+    for _, mio in mios.iterrows():
+        name = str(mio.get('Employe_Name') or '').strip()
+        position = str(mio.get('Position_Code') or '').strip()
+        if (not name or not position or name.upper() in ('NAN', 'NONE', 'NULL')
+                or any(token in name.upper() for token in ('UNMAPPED', 'VACANT'))
+                or position.upper().endswith('-00')):
+            continue
+        if position and 'POSITION_CODE' in month_sales:
+            individual = month_sales[month_sales['POSITION_CODE'].fillna('').astype(str).str.strip().str.upper()
+                                     .eq(position.upper())]
+        elif name and 'NAME' in month_sales:
+            individual = month_sales[month_sales['NAME'].fillna('').astype(str).str.strip().str.casefold()
+                                     .eq(name.casefold())]
+        else:
+            individual = month_sales.iloc[0:0]
+        actual = float(individual[val_col].sum()) if not individual.empty else 0.0
+        breakdown.append({
+            'name': name, 'pos_code': position, 'actual': actual, 'target': MIO_TARGET,
+            'qualified': actual >= MIO_TARGET, 'incentive': MIO_INCENTIVE if actual >= MIO_TARGET else 0,
+            'shortfall': max(MIO_TARGET - actual, 0.0),
+        })
+    return breakdown
+
+
+def _regional_privilege_result(breakdown, incentive, designation):
+    total = len(breakdown)
+    qualified = sum(1 for row in breakdown if row['qualified'])
+    is_qualified = total > 0 and qualified == total
+    earned = incentive if is_qualified else 0
+    missing = [row for row in breakdown if not row['qualified']]
+    label = 'ASM' if designation == 'ASM' else 'RSM'
+    if is_qualified:
+        status = 'QUALIFIED'
+        remark = (f'All {qualified} MIOs in the region achieved PKR 1 Million monthly Net Sales. '
+                  f'{label} qualified for Rs. {incentive:,.0f} Privilege Club incentive.')
+    elif total == 0:
+        status = 'NOT QUALIFIED'
+        remark = 'No MIOs found in this region for the selected team.'
+    else:
+        names = ', '.join(row['name'] for row in missing[:3])
+        if len(missing) > 3:
+            names += f' and {len(missing) - 3} more'
+        status = 'NOT QUALIFIED'
+        remark = (f'{qualified} of {total} MIOs achieved PKR 1 Million monthly Net Sales. '
+                  f'All regional MIOs must qualify. Not qualified: {names}.')
+    return {
+        'total_mio': total, 'qualified_mio': qualified, 'not_qualified_mio': total - qualified,
+        'total_spo': total, 'qualified_spo': qualified, 'not_qualified_spo': total - qualified,
+        'total_asm': total, 'qualified_asm': qualified, 'not_qualified_asm': total - qualified,
+        'asm_qualified': is_qualified if designation == 'ASM' else False,
+        'rsm_qualified': is_qualified if designation == 'RSM' else False,
+        'incentive': earned, 'max_incentive': incentive, 'spo_target': MIO_TARGET,
+        'mio_breakdown': breakdown, 'spo_breakdown': breakdown, 'asm_breakdown': breakdown,
+        'status': status, 'remark': remark, 'not_qualified_list': missing,
+        'total_target': total * MIO_TARGET,
+        'total_actual': sum(row['actual'] for row in breakdown),
+    }
+
+
 def calculate_privilege_club_incentive(employee, month, sales_df, pos_code=None, territory=None):
     """
-    Calculates Privilege Club (1 Million Club) Incentive for SPOs across all teams:
-    DO, TOUCH, OVERLAPPING, and BLISS.
+    Calculates the individual 1 Million Club incentive for field employees.
     Qualifying Criteria: On Achievement of PKR 1 Million Net Sales in a month.
     Incentive Amount: Rs. 25,000.
     """
@@ -71,7 +181,7 @@ def calculate_privilege_club_incentive(employee, month, sales_df, pos_code=None,
     }
 
 
-def calculate_asm_privilege_club(asm_employee, month, sales_df, staff_df, asm_pos_code=None):
+def _legacy_calculate_asm_privilege_club(asm_employee, month, sales_df, staff_df, asm_pos_code=None):
     """
     Calculates the ASM Privilege Club incentive.
 
@@ -222,7 +332,7 @@ def _asm_privilege_result(total_spo, qualified_spo, asm_incentive_max, spo_break
     }
 
 
-def calculate_rsm_privilege_club(rsm_employee, month, sales_df, staff_df, target_df, rsm_pos_code=None, aggregate_asm_fn=None):
+def _legacy_calculate_rsm_privilege_club(rsm_employee, month, sales_df, staff_df, target_df, rsm_pos_code=None, aggregate_asm_fn=None):
     """
     Calculates the RSM Privilege Club incentive (Rs. 100,000).
 
@@ -371,3 +481,18 @@ def _rsm_privilege_result(total_asm, qualified_asm, rsm_incentive_max, asm_break
         'total_target': total_target,
         'total_actual': total_actual,
     }
+
+
+def calculate_asm_privilege_club(asm_employee, month, sales_df, staff_df, asm_pos_code=None):
+    """Award the ASM club amount when every regional MIO reaches PKR 1 million."""
+    manager = _staff_record(staff_df, asm_employee, asm_pos_code)
+    breakdown = _regional_mio_breakdown(manager, month, sales_df, staff_df)
+    return _regional_privilege_result(breakdown, ASM_INCENTIVE, 'ASM')
+
+
+def calculate_rsm_privilege_club(rsm_employee, month, sales_df, staff_df, target_df=None,
+                                 rsm_pos_code=None, aggregate_asm_fn=None):
+    """Award the RSM club amount when every regional MIO reaches PKR 1 million."""
+    manager = _staff_record(staff_df, rsm_employee, rsm_pos_code)
+    breakdown = _regional_mio_breakdown(manager, month, sales_df, staff_df)
+    return _regional_privilege_result(breakdown, RSM_INCENTIVE, 'RSM')

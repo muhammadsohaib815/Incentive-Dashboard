@@ -209,7 +209,6 @@ def evaluate_pharma_rsm_incentives(
         f"Rs. {zone_total_pool:,.0f} across {qualified_staff_count} qualifying Field Force staff: "
         f"{qualified_mio_ps_count}/{mio_ps_count} MIO/PS and {qualified_asm_count}/{asm_count} ASMs)."
     )
-
     result = {
         "rsm_name": rsm_name,
         "rsm_pos_code": rsm_pos,

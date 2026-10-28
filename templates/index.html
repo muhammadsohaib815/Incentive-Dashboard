@@ -41,7 +41,9 @@
                     <p class="header-subtitle" id="header-subtitle"{% if not cur_sub %} style="display: none;"{% endif %}>{{ cur_sub or '' }}</p>
                 </div>
             </div>
-            <div class="header-controls">
+            <button type="button" id="header-actions-toggle" class="header-actions-toggle"
+                onclick="toggleHeaderActions()" aria-controls="header-controls" aria-expanded="true">Hide tabs</button>
+            <div class="header-controls" id="header-controls">
                 <button type="button" id="filter-toggle-btn" class="filter-toggle-btn" onclick="toggleFilters()"
                     aria-controls="filter-panel-box" aria-expanded="false">Filter</button>
                 <nav class="summary-toggle" aria-label="Employee summaries">
@@ -144,69 +146,10 @@
         <!-- Dashboard Dynamic Content Area (Updated via AJAX without full page reload) -->
         <div id="dashboard-content-area">
             {% if result %}
-            <!-- Profile Card Matching User Design -->
-            <section class="profile-card-container">
-                <div class="profile-card-top">
-                    <div class="profile-left">
-                        <div class="avatar-circle">
-                            {{ result.initials }}
-                        </div>
-                        <div class="profile-info">
-                            <h2 class="profile-name">{{ result.employee }}</h2>
-                            <div class="profile-meta-row">
-                                <span class="profile-badge-desg">{{ result.designation }}</span>
-                                {% if result.employee_details %}
-                                <button type="button" id="emp-info-toggle" class="btn-preview" aria-expanded="false"
-                                    title="Toggle Employee Information Preview">
-                                    <span>Preview</span>
-                                    <svg class="toggle-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <polyline points="18 15 12 9 6 15"></polyline>
-                                    </svg>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="profile-right">
-                        <div
-                            class="status-pill {% if result.active_qualified %}status-qualified{% else %}status-unqualified{% endif %}">
-                            {% if result.active_qualified %}
-                            <span class="status-icon-circle check">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white"
-                                    stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </span>
-                            <span>Qualified ({{ result.active_tier }})</span>
-                            {% else %}
-                            <span class="status-icon-circle alert">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white"
-                                    stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                </svg>
-                            </span>
-                            <span>Not qualified</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                {% if result.employee_details %}
-                <!-- Downward Open Bar (Values Only, Minimal Space) with divider inside card -->
-                <div id="emp-info-bar" class="emp-info-bar">
-                    <div class="profile-card-divider"></div>
-                    <div class="emp-chips-container">
-                        {% for val in result.employee_details %}
-                        <span class="emp-chip">{{ val }}</span>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            </section>
-
+            <div id="dashboard-report-meta" hidden
+                data-employee="{{ result.employee }}"
+                data-designation="{{ result.designation }}"
+                data-status="{% if result.active_qualified %}Qualified ({{ result.active_tier }}){% else %}Not qualified{% endif %}"></div>
 
             {% macro render_criterion_card(c, joint_label=none) %}
             <div class="criterion criterion-accent-{{ c.id }} bar-criterion-card">
@@ -757,8 +700,8 @@
                             </div>
                             <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.asm_privilege_incentive) }}</div>
                             <div class="metric-desc">
-                                {{ result.asm_privilege_club.qualified_spo }} / {{ result.asm_privilege_club.total_spo }}
-                                SPOs Qualified
+                                {{ result.asm_privilege_club.qualified_mio }} / {{ result.asm_privilege_club.total_mio }}
+                                MIOs Qualified
                             </div>
                         </article>
                         {% endif %}
@@ -1001,8 +944,8 @@
                             </div>
                             <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.asm_privilege_incentive) }}</div>
                             <div class="metric-desc">
-                                {{ result.asm_privilege_club.qualified_spo }} / {{ result.asm_privilege_club.total_spo }}
-                                SPOs Qualified
+                                {{ result.asm_privilege_club.qualified_mio }} / {{ result.asm_privilege_club.total_mio }}
+                                MIOs Qualified
                             </div>
                         </article>
                         {% endif %}
@@ -1245,8 +1188,8 @@
                             </div>
                             <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.asm_privilege_incentive) }}</div>
                             <div class="metric-desc">
-                                {{ result.asm_privilege_club.qualified_spo }} / {{ result.asm_privilege_club.total_spo }}
-                                SPOs Qualified
+                                {{ result.asm_privilege_club.qualified_mio }} / {{ result.asm_privilege_club.total_mio }}
+                                MIOs Qualified
                             </div>
                         </article>
                         {% endif %}
@@ -1581,8 +1524,8 @@
                             </div>
                             <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.asm_privilege_incentive) }}</div>
                             <div class="metric-desc">
-                                {{ result.asm_privilege_club.qualified_spo }} / {{ result.asm_privilege_club.total_spo }}
-                                SPOs Qualified
+                                {{ result.asm_privilege_club.qualified_mio }} / {{ result.asm_privilege_club.total_mio }}
+                                MIOs Qualified
                             </div>
                         </article>
                         {% endif %}
@@ -1977,7 +1920,7 @@
                             </div>
                             <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.rsm_privilege_incentive) }}</div>
                             <div class="metric-desc">
-                                {{ result.rsm_privilege_club.qualified_asm }} / {{ result.rsm_privilege_club.total_asm }} ASMs Qualified
+                                {{ result.rsm_privilege_club.qualified_mio }} / {{ result.rsm_privilege_club.total_mio }} MIOs Qualified
                             </div>
                         </article>
                         {% endif %}
@@ -2020,7 +1963,7 @@
                                 <span class="metric-card-title">RSM Payout (10%)</span>
                             </div>
                             <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.final_payout) }}</div>
-                            <div class="metric-desc">10% of Zone {{ result.pharma_rsm.rsm_zone }} Pool</div>
+                            <div class="metric-desc">10% of Zone {{ result.pharma_rsm.rsm_zone }} Pool · Privilege Club included</div>
                         </article>
 
                         <!-- Card 2: Zone Total Pool -->
@@ -2095,6 +2038,16 @@
                                 {% endif %}
                                 {{ "{:,.0f}".format(result.pharma_rsm.zone_act_units) }} / {{ "{:,.0f}".format(result.pharma_rsm.zone_tgt_units) }} units
                             </div>
+                        </article>
+                        <article class="metric-card {% if result.rsm_privilege_club.rsm_qualified %}metric-card-privilege{% endif %}">
+                            <div class="metric-card-header">
+                                <div class="metric-icon-circle metric-icon-privilege">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                                </div>
+                                <span class="metric-card-title">1 Million Privilege Club</span>
+                            </div>
+                            <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.rsm_privilege_incentive) }}</div>
+                            <div class="metric-desc">{{ result.rsm_privilege_club.qualified_mio }} / {{ result.rsm_privilege_club.total_mio }} regional MIOs at PKR 1M</div>
                         </article>
                     </section>
 
@@ -2255,8 +2208,8 @@
                                 </div>
                                 <span class="metric-card-title">Final Payout</span>
                             </div>
-                            <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.pharma.total_incentive) }}</div>
-                            <div class="metric-desc">{{ result.pharma.qualified_count }} of {{ result.pharma.rate_bearing_products }} Products Qualified</div>
+                            <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.final_payout) }}</div>
+                            <div class="metric-desc">{{ result.pharma.qualified_count }} of {{ result.pharma.rate_bearing_products }} Products Qualified{% if result.is_asm and result.asm_privilege_incentive %} · Includes ASM Privilege{% elif result.privilege_incentive %} · Includes Privilege Club{% endif %}</div>
                         </article>
 
                         <!-- Card 2: Net Sales Achievement -->
@@ -2323,6 +2276,18 @@
                             <div class="metric-amount" style="font-size: 1.12rem; color: #123C7A;">{% if result.is_asm or result.pharma.is_asm %}Area Sales Manager (ASM){% else %}MIO &amp; PS (OMR){% endif %}</div>
                             <div class="metric-desc">Min. 85% Value &amp; 85% Units &bull; Bottom-Line &ge; 85%</div>
                         </article>
+                        <article class="metric-card {% if result.is_asm and result.asm_privilege_club.asm_qualified or result.privilege_club and result.privilege_club.qualified %}metric-card-privilege{% endif %}">
+                            <div class="metric-card-header">
+                                <div class="metric-icon-circle metric-icon-privilege">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                                </div>
+                                <span class="metric-card-title">1 Million Privilege Club</span>
+                            </div>
+                            <div class="metric-amount">Rs. {{ "{:,.0f}".format(result.asm_privilege_incentive if result.is_asm else result.privilege_incentive) }}</div>
+                            <div class="metric-desc">
+                                {% if result.is_asm %}{{ result.asm_privilege_club.qualified_mio }} / {{ result.asm_privilege_club.total_mio }} regional MIOs at PKR 1M{% else %}{{ "Qualified" if result.privilege_club.qualified else result.privilege_club.need_text }}{% endif %}
+                            </div>
+                        </article>
                     </section>
 
                     <!-- Products Portfolio Section -->
@@ -2330,7 +2295,7 @@
                         <div class="pharma-section-header">
                             <div class="pharma-sh-left">
                                 <h3 class="pharma-section-title">Pharmaceutical Products Portfolio {% if result.is_asm or result.pharma.is_asm %}(ASM){% else %}(MIO &amp; PS){% endif %}</h3>
-                                <span class="pharma-sh-count">13 Products</span>
+                                <span class="pharma-sh-count">{{ result.pharma.products|length }} Products</span>
                                 {% if result.pharma.qualified_count > 0 %}
                                 <span class="tier-pill tier-pill-success" style="font-size:0.68rem;">{{ result.pharma.qualified_count }} Qualified</span>
                                 {% endif %}
@@ -2341,7 +2306,7 @@
                             </div>
                         </div>
 
-                        <!-- 13 Products Grid -->
+                        <!-- Pharma products grid -->
                         <div class="pharma-products-grid">
                             {% for p in result.pharma.products %}
                             <article class="pharma-prod-card {% if p.qualified %}is-qualified{% elif not p.has_rates %}is-exempt{% else %}is-not-qualified{% endif %}" id="pharma-prod-{{ p.key }}">
@@ -2523,7 +2488,7 @@
             {% endif %}
 
             <!-- ASM Privilege Club Detail Section -->
-            {% if result.is_asm and result.asm_privilege_club and result.asm_privilege_club.total_spo > 0 %}
+            {% if result.is_asm and result.asm_privilege_club and result.asm_privilege_club.total_mio > 0 %}
             {% set apc = result.asm_privilege_club %}
             <section class="panel asm-privilege-panel" id="asm-privilege-detail-panel">
                 <button type="button" class="policy-rules-toggle" id="asm-privilege-toggle" aria-expanded="false"
@@ -2557,23 +2522,23 @@
                     <!-- Summary Row -->
                     <div class="asm-priv-summary-grid">
                         <div class="asm-priv-stat">
-                            <div class="asm-priv-stat-val">{{ apc.total_spo }}</div>
-                            <div class="asm-priv-stat-label">Eligible SPOs</div>
+                            <div class="asm-priv-stat-val">{{ apc.total_mio }}</div>
+                            <div class="asm-priv-stat-label">Eligible MIOs</div>
                         </div>
                         <div class="asm-priv-stat asm-priv-stat-qualified">
-                            <div class="asm-priv-stat-val">{{ apc.qualified_spo }}</div>
-                            <div class="asm-priv-stat-label">Qualified SPOs</div>
+                            <div class="asm-priv-stat-val">{{ apc.qualified_mio }}</div>
+                            <div class="asm-priv-stat-label">Qualified MIOs</div>
                         </div>
                         <div class="asm-priv-stat asm-priv-stat-failed">
-                            <div class="asm-priv-stat-val">{{ apc.not_qualified_spo }}</div>
+                            <div class="asm-priv-stat-val">{{ apc.not_qualified_mio }}</div>
                             <div class="asm-priv-stat-label">Not Qualified</div>
                         </div>
                         <div class="asm-priv-stat">
                             <div class="asm-priv-stat-val">Rs. 1,000,000</div>
-                            <div class="asm-priv-stat-label">SPO Target Each</div>
+                            <div class="asm-priv-stat-label">MIO Target Each</div>
                         </div>
                         <div class="asm-priv-stat">
-                            <div class="asm-priv-stat-val">ALL {{ apc.total_spo }}</div>
+                            <div class="asm-priv-stat-val">ALL {{ apc.total_mio }}</div>
                             <div class="asm-priv-stat-label">Required to Qualify</div>
                         </div>
                         <div
@@ -2690,7 +2655,7 @@
             {% endif %}
 
             <!-- RSM Privilege Club Detail Section -->
-            {% if result.is_rsm and result.rsm_privilege_club and result.rsm_privilege_club.total_asm > 0 %}
+            {% if result.is_rsm and result.rsm_privilege_club and result.rsm_privilege_club.total_mio > 0 %}
             {% set rpc = result.rsm_privilege_club %}
             <section class="panel asm-privilege-panel" id="rsm-privilege-detail-panel">
                 <button type="button" class="policy-rules-toggle" id="rsm-privilege-toggle" aria-expanded="false"
@@ -2724,23 +2689,23 @@
                     <!-- Summary Row -->
                     <div class="asm-priv-summary-grid">
                         <div class="asm-priv-stat">
-                            <div class="asm-priv-stat-val">{{ rpc.total_asm }}</div>
-                            <div class="asm-priv-stat-label">Eligible ASMs</div>
+                            <div class="asm-priv-stat-val">{{ rpc.total_mio }}</div>
+                            <div class="asm-priv-stat-label">Eligible MIOs</div>
                         </div>
                         <div class="asm-priv-stat asm-priv-stat-qualified">
-                            <div class="asm-priv-stat-val">{{ rpc.qualified_asm }}</div>
-                            <div class="asm-priv-stat-label">Qualified ASMs</div>
+                            <div class="asm-priv-stat-val">{{ rpc.qualified_mio }}</div>
+                            <div class="asm-priv-stat-label">Qualified MIOs</div>
                         </div>
                         <div class="asm-priv-stat asm-priv-stat-failed">
-                            <div class="asm-priv-stat-val">{{ rpc.not_qualified_asm }}</div>
+                            <div class="asm-priv-stat-val">{{ rpc.not_qualified_mio }}</div>
                             <div class="asm-priv-stat-label">Not Qualified</div>
                         </div>
                         <div class="asm-priv-stat">
-                            <div class="asm-priv-stat-val">100% Target</div>
-                            <div class="asm-priv-stat-label">Net Sales Target</div>
+                            <div class="asm-priv-stat-val">Rs. 1,000,000</div>
+                            <div class="asm-priv-stat-label">MIO Net Sales Target</div>
                         </div>
                         <div class="asm-priv-stat">
-                            <div class="asm-priv-stat-val">ALL {{ rpc.total_asm }}</div>
+                            <div class="asm-priv-stat-val">ALL {{ rpc.total_mio }}</div>
                             <div class="asm-priv-stat-label">Required to Qualify</div>
                         </div>
                         <div
@@ -3464,11 +3429,11 @@
                             <!-- PRIVILEGE CLUB RULE (FOR ALL SPOS: DO, TOUCH, OVERLAPPING, BLISS) -->
                             <tr
                                 class="policy-team-privilege {% if result.privilege_club and result.privilege_club.qualified %}active-rule{% endif %}">
-                                <td style="vertical-align: middle; font-weight: 700; color: #b45309;">SPOs<br><small
+                                <td style="vertical-align: middle; font-weight: 700; color: #b45309;">MIOs / SPOs<br><small
                                         style="color: #627282; font-weight: normal;">(All Teams)</small></td>
                                 <td>
                                     <strong>Incentive Criteria for Privilege Club:</strong><br>
-                                    On Achievement of PKR 1 Million Net Sales in a month
+                                    MIOs/SPOs earn PKR 25,000 on achieving PKR 1 million net sales in a month
                                 </td>
                                 <td colspan="2" style="text-align: right;"
                                     class="{% if result.privilege_club and result.privilege_club.qualified %}tier-active{% endif %}">
@@ -3485,7 +3450,7 @@
                                         style="color: #627282; font-weight: normal;">(All Teams)</small></td>
                                 <td>
                                     <strong>Incentive Criteria for Privilege Club (ASM):</strong><br>
-                                    All {{ result.asm_privilege_club.total_spo }} SPOs individually achieve PKR 1
+                                    All {{ result.asm_privilege_club.total_mio }} regional MIOs individually achieve PKR 1
                                     Million Net Sales in a month
                                 </td>
                                 <td colspan="2" style="text-align: right;"
@@ -3503,7 +3468,7 @@
                                         style="color: #627282; font-weight: normal;">(All Regions)</small></td>
                                 <td>
                                     <strong>Incentive Criteria for Privilege Club (RSM):</strong><br>
-                                    If all ASMs of His/her respective region achieve Net Sales Target in a month.
+                                    All {{ result.rsm_privilege_club.total_mio }} MIOs in his/her region individually achieve PKR 1 million Net Sales in a month.
                                 </td>
                                 <td colspan="2" style="text-align: right;"
                                     class="{% if result.rsm_privilege_club.rsm_qualified %}tier-active{% endif %}">

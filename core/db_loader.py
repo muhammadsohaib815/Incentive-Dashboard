@@ -258,12 +258,10 @@ def load_datasets(reporting_month=None):
         "IRON", "MULTI", "FEMI", "MISOTAL", "GREKIE", "NOVADOL", "ZINC",
         "OBSTETRIC", "CALCIUM", "ORS", "PROTECT", "ANTIFUNGAL",
     )
-    if not sales.empty and "PRD_GRP" in sales.columns:
+    if not sales.empty and "GROUP_ON" in sales.columns:
         sales_pharma = sales.get("TEAM", pd.Series("", index=sales.index)).astype(str).str.upper().str.contains("PHARM", na=False)
-        mask = sales["PRD_GRP"].astype(str).str.upper().map(
-            lambda value: any(value.startswith(prefix) for prefix in valid_prefixes)
-        ) | sales_pharma
-        sales = sales[mask].copy()
+        has_group = sales["GROUP_ON"].notna() & sales["GROUP_ON"].astype(str).str.strip().ne("")
+        sales = sales[has_group | sales_pharma].copy()
 
     if not target.empty and "Product Group" in target.columns:
         target_pharma = target.get("Team", pd.Series("", index=target.index)).astype(str).str.upper().str.contains("PHARM", na=False)

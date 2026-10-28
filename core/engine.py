@@ -178,6 +178,14 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
     bliss_asm_ucc_inc = 0
 
     if is_asm:
+        asm_privilege_result = calculate_asm_privilege_club(
+            asm_employee=employee,
+            month=month,
+            sales_df=sales_df,
+            staff_df=staff_df,
+            asm_pos_code=resolved_pos or pos_code
+        )
+        asm_privilege_inc = asm_privilege_result['incentive']
         # Dedicated Area Sales Manager (ASM) incentive evaluation
         if active_category == 'pharma':
             active_team_name = "PHARMACEUTICAL ASMs"
@@ -194,16 +202,14 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
             ucc_inc = 0
             privilege_club_result = None
             privilege_inc = 0
-            asm_privilege_result = None
-            asm_privilege_inc = 0
             bliss_asm_ucc_result = None
             bliss_asm_ucc_inc = 0
-            final_payout = pharma_result['total_incentive']
+            final_payout = pharma_result['total_incentive'] + asm_privilege_inc
             touch_final_payout = final_payout
             overlapping_final_payout = final_payout
             bliss_final_payout = final_payout
             grand_total_incentive = final_payout
-            is_qualified = active_qualified
+            is_qualified = active_qualified or (asm_privilege_inc > 0)
             val_logic_map = get_val_logic_mapping()
             emp_type = val_logic_map.get(str(resolved_pos).strip().upper()) or designation or "ASM"
         else:
@@ -245,16 +251,6 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
             privilege_club_result = None
             privilege_inc = 0
 
-            # ASM Privilege Club: all-or-nothing based on ALL SPOs individually qualifying
-            asm_privilege_result = calculate_asm_privilege_club(
-                asm_employee=employee,
-                month=month,
-                sales_df=sales_df,
-                staff_df=staff_df,
-                asm_pos_code=resolved_pos or pos_code
-            )
-            asm_privilege_inc = asm_privilege_result['incentive']
-
             # BLISS dedicated-ASM UCC bonus: Rs. 10,000 additive if ALL BLISS SPOs
             # under this ASM achieve their individual Net targets.
             bliss_asm_ucc_result = None
@@ -277,7 +273,7 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
             overlapping_final_payout = active_incentive + asm_privilege_inc + bliss_asm_ucc_inc
             bliss_final_payout = active_incentive + asm_privilege_inc + bliss_asm_ucc_inc
             grand_total_incentive = active_incentive + asm_privilege_inc + bliss_asm_ucc_inc
-            is_qualified = active_qualified
+            is_qualified = active_qualified or (asm_privilege_inc > 0)
 
             val_logic_map = get_val_logic_mapping()
             emp_type = val_logic_map.get(str(resolved_pos).strip().upper())
@@ -285,6 +281,15 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
                 nature = employee_details[2] if len(employee_details) > 2 else ""
                 emp_type = nature or "ASM"
     elif is_rsm:
+        rsm_privilege_result = calculate_rsm_privilege_club(
+            rsm_employee=employee,
+            month=month,
+            sales_df=sales_df,
+            staff_df=staff_df,
+            target_df=target_df,
+            rsm_pos_code=resolved_pos or pos_code,
+        )
+        rsm_privilege_inc = rsm_privilege_result['incentive']
         if is_pharma_rsm:
             # Dedicated Pharma Regional Sales Manager (RSM) incentive evaluation
             active_category = 'pharma'
@@ -302,15 +307,13 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
             privilege_inc = 0
             asm_privilege_result = None
             asm_privilege_inc = 0
-            rsm_privilege_result = None
-            rsm_privilege_inc = 0
 
-            final_payout = active_incentive
+            final_payout = active_incentive + rsm_privilege_inc
             touch_final_payout = final_payout
             overlapping_final_payout = final_payout
             bliss_final_payout = final_payout
             grand_total_incentive = final_payout
-            is_qualified = active_qualified
+            is_qualified = active_qualified or (rsm_privilege_inc > 0)
 
             val_logic_map = get_val_logic_mapping()
             emp_type = val_logic_map.get(str(resolved_pos).strip().upper()) or designation or "RSM"
@@ -322,15 +325,6 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
             val_col = 'NET_WO_REG_DISC_VALUE' if 'NET_WO_REG_DISC_VALUE' in sales_df.columns else ('NET_SALE_VALUE' if 'NET_SALE_VALUE' in sales_df.columns else None)
             rsm_result = evaluate_rsm_incentives(
                 employee, month, street_tgt, street_sal, reg_tgt, reg_sal, t_net_col, val_col=val_col or 'NET_WO_REG_DISC_VALUE'
-            )
-            rsm_privilege_result = calculate_rsm_privilege_club(
-                rsm_employee=employee,
-                month=month,
-                sales_df=sales_df,
-                staff_df=staff_df,
-                target_df=target_df,
-                rsm_pos_code=resolved_pos or pos_code,
-                aggregate_asm_fn=aggregate_asm_datasets
             )
             active_category = 'rsm'
             active_team_name = "GSM RSMs"
@@ -373,17 +367,20 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
                 active_tier = f"Pharma ({pharma_result['qualified_count']}/{pharma_result['rate_bearing_products']}) Qualified" if active_qualified else "Not Qualified"
             active_qualified_count = pharma_result['qualified_count']
             active_total_rules = pharma_result['rate_bearing_products']
+            privilege_club_result = calculate_privilege_club_incentive(
+                employee=employee, month=month, sales_df=sales_df,
+                pos_code=resolved_pos or pos_code, territory=territory
+            )
+            privilege_inc = privilege_club_result['incentive']
             ucc_result = None
-            privilege_club_result = None
             ucc_inc = 0
-            privilege_inc = 0
             do_final_payout = 0
             touch_final_payout = 0
             overlapping_final_payout = 0
             bliss_final_payout = 0
-            final_payout = pharma_result['total_incentive']
+            final_payout = pharma_result['total_incentive'] + privilege_inc
             grand_total_incentive = final_payout
-            is_qualified = active_qualified
+            is_qualified = active_qualified or (privilege_inc > 0)
             val_logic_map = get_val_logic_mapping()
             emp_type = val_logic_map.get(str(resolved_pos).strip().upper()) or designation or "MIO"
         elif active_category == 'do':
@@ -598,10 +595,10 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
                 ],
                 'qualification_requirements': [],
                 'total_incentive': pharma_result['total_incentive'],
-                'final_payout': pharma_result['total_incentive'],
-                'total_incentive_with_ucc': pharma_result['total_incentive'],
-                'grand_total_incentive': pharma_result['total_incentive'],
-                'is_qualified': pharma_result['total_incentive'] > 0,
+                'final_payout': pharma_result['total_incentive'] + asm_privilege_inc,
+                'total_incentive_with_ucc': pharma_result['total_incentive'] + asm_privilege_inc,
+                'grand_total_incentive': pharma_result['total_incentive'] + asm_privilege_inc,
+                'is_qualified': pharma_result['total_incentive'] > 0 or asm_privilege_inc > 0,
             })
         elif active_category == 'overlapping':
             result.update({
@@ -649,8 +646,8 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
                 'asm_privilege_incentive': 0,
                 'bliss_asm_ucc': None,
                 'bliss_asm_ucc_incentive': 0,
-                'rsm_privilege_club': None,
-                'rsm_privilege_incentive': 0,
+                'rsm_privilege_club': rsm_privilege_result,
+                'rsm_privilege_incentive': rsm_privilege_inc,
                 'pharma_rsm': pharma_rsm_result,
                 'criteria': [],
                 'criteria_dict': {},
@@ -724,10 +721,12 @@ def calculate_all_incentives(employee, month, target_df, sales_df, target_master
                 ],
                 'qualification_requirements': [],
                 'total_incentive': pharma_result['total_incentive'],
-                'final_payout': pharma_result['total_incentive'],
-                'total_incentive_with_ucc': pharma_result['total_incentive'],
-                'grand_total_incentive': pharma_result['total_incentive'],
-                'is_qualified': pharma_result['total_incentive'] > 0,
+                'privilege_club': privilege_club_result,
+                'privilege_incentive': privilege_inc,
+                'final_payout': pharma_result['total_incentive'] + privilege_inc,
+                'total_incentive_with_ucc': pharma_result['total_incentive'] + privilege_inc,
+                'grand_total_incentive': pharma_result['total_incentive'] + privilege_inc,
+                'is_qualified': pharma_result['total_incentive'] > 0 or privilege_inc > 0,
             })
 
     return result
